@@ -14,9 +14,9 @@ export const QrForm: React.FC<QrFormProps> = ({ config, onChange, lang }) => {
   const t = translations[lang];
 
   const presets = [
+    { name: 'Emerald', fg: '#065f46', bg: '#f0fdf4' },
     { name: 'Midnight', fg: '#0f172a', bg: '#ffffff' },
     { name: 'Royal Indigo', fg: '#4338ca', bg: '#f8fafc' },
-    { name: 'Emerald', fg: '#065f46', bg: '#f0fdf4' },
     { name: 'Crimson', fg: '#991b1b', bg: '#fef2f2' },
     { name: 'Deep Purple', fg: '#581c87', bg: '#faf5ff' },
   ];
@@ -46,22 +46,25 @@ export const QrForm: React.FC<QrFormProps> = ({ config, onChange, lang }) => {
             { id: 'url', label: 'URL / Link', icon: <Link2 className="w-4 h-4" /> },
             { id: 'wifi', label: 'Wi-Fi Network', icon: <Wifi className="w-4 h-4" /> },
             { id: 'text', label: 'Plain Text', icon: <AlignLeft className="w-4 h-4" /> },
-          ].map((type) => (
-            <button
-              key={type.id}
-              id={`qr-type-${type.id}`}
-              type="button"
-              onClick={() => onChange({ ...config, type: type.id as any })}
-              className={`flex items-center justify-center gap-2 p-3 rounded-xl border text-xs font-bold transition-all ${
-                config.type === type.id
-                  ? 'border-indigo-600 bg-indigo-50/70 text-indigo-700 shadow-xs'
-                  : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300'
-              }`}
-            >
-              {type.icon}
-              <span>{type.label}</span>
-            </button>
-          ))}
+          ].map((type) => {
+            const isSelected = config.type === type.id;
+            return (
+              <button
+                key={type.id}
+                id={`qr-type-${type.id}`}
+                type="button"
+                onClick={() => onChange({ ...config, type: type.id as any })}
+                className={`flex items-center justify-center gap-2 p-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                  isSelected
+                    ? 'border-emerald-600 bg-emerald-600 text-white shadow-sm'
+                    : 'border-stone-200 bg-white text-stone-600 hover:bg-emerald-50 hover:border-emerald-300'
+                }`}
+              >
+                {type.icon}
+                <span>{type.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -78,7 +81,7 @@ export const QrForm: React.FC<QrFormProps> = ({ config, onChange, lang }) => {
                 value={config.content}
                 onChange={(e) => onChange({ ...config, content: e.target.value })}
                 placeholder="https://example.com"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
               />
             </div>
           </div>
@@ -94,7 +97,7 @@ export const QrForm: React.FC<QrFormProps> = ({ config, onChange, lang }) => {
               value={config.content}
               onChange={(e) => onChange({ ...config, content: e.target.value })}
               placeholder="Enter any text, address, message..."
-              className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-khmer"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm font-khmer"
             />
           </div>
         )}
@@ -110,7 +113,7 @@ export const QrForm: React.FC<QrFormProps> = ({ config, onChange, lang }) => {
                 value={config.wifiSsid || ''}
                 onChange={(e) => onChange({ ...config, wifiSsid: e.target.value })}
                 placeholder="Home_WiFi_5G"
-                className="w-full px-3.5 py-2 rounded-xl border border-stone-300 focus:ring-2 focus:ring-indigo-500 text-sm"
+                className="w-full px-3.5 py-2 rounded-xl border border-stone-300 focus:ring-2 focus:ring-emerald-500 text-sm"
               />
             </div>
             <div>
@@ -122,7 +125,7 @@ export const QrForm: React.FC<QrFormProps> = ({ config, onChange, lang }) => {
                 value={config.wifiPassword || ''}
                 onChange={(e) => onChange({ ...config, wifiPassword: e.target.value })}
                 placeholder="WiFi password..."
-                className="w-full px-3.5 py-2 rounded-xl border border-stone-300 focus:ring-2 focus:ring-indigo-500 text-sm font-mono"
+                className="w-full px-3.5 py-2 rounded-xl border border-stone-300 focus:ring-2 focus:ring-emerald-500 text-sm font-mono"
               />
             </div>
             <div>
@@ -132,7 +135,7 @@ export const QrForm: React.FC<QrFormProps> = ({ config, onChange, lang }) => {
               <select
                 value={config.wifiEncryption || 'WPA'}
                 onChange={(e) => onChange({ ...config, wifiEncryption: e.target.value as any })}
-                className="w-full px-3.5 py-2 rounded-xl border border-stone-300 focus:ring-2 focus:ring-indigo-500 text-sm bg-white"
+                className="w-full px-3.5 py-2 rounded-xl border border-stone-300 focus:ring-2 focus:ring-emerald-500 text-sm bg-white"
               >
                 <option value="WPA">WPA / WPA2 (Standard)</option>
                 <option value="WEP">WEP (Older routers)</option>
@@ -146,7 +149,7 @@ export const QrForm: React.FC<QrFormProps> = ({ config, onChange, lang }) => {
       {/* 3. Style & Color Customization */}
       <Card className="space-y-5">
         <div className="flex items-center gap-2 pb-2 border-b border-stone-100">
-          <Palette className="w-4 h-4 text-indigo-600" />
+          <Palette className="w-4 h-4 text-emerald-600" />
           <h4 className="text-xs font-bold text-stone-800 uppercase tracking-wider">
             Custom Styles & Colors
           </h4>
@@ -163,10 +166,10 @@ export const QrForm: React.FC<QrFormProps> = ({ config, onChange, lang }) => {
                 key={preset.name}
                 type="button"
                 onClick={() => onChange({ ...config, fgColor: preset.fg, bgColor: preset.bg })}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
                   config.fgColor === preset.fg
-                    ? 'border-indigo-600 bg-stone-50 ring-2 ring-indigo-300'
-                    : 'border-stone-200 bg-white hover:border-stone-300'
+                    ? 'border-emerald-600 bg-emerald-600 text-white font-bold shadow-sm'
+                    : 'border-stone-200 bg-white hover:bg-emerald-50 hover:border-emerald-300 text-stone-700'
                 }`}
               >
                 <span
@@ -190,10 +193,10 @@ export const QrForm: React.FC<QrFormProps> = ({ config, onChange, lang }) => {
                 key={style}
                 type="button"
                 onClick={() => onChange({ ...config, dotType: style })}
-                className={`px-3 py-2 rounded-xl border text-xs font-medium capitalize transition-all ${
+                className={`px-3 py-2 rounded-xl border text-xs font-medium capitalize transition-all cursor-pointer ${
                   config.dotType === style
-                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700 font-bold'
-                    : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300'
+                    ? 'border-emerald-600 bg-emerald-600 text-white font-bold shadow-sm'
+                    : 'border-stone-200 bg-white text-stone-600 hover:bg-emerald-50 hover:border-emerald-300'
                 }`}
               >
                 {style.replace('-', ' ')}
@@ -220,14 +223,14 @@ export const QrForm: React.FC<QrFormProps> = ({ config, onChange, lang }) => {
               <button
                 type="button"
                 onClick={() => onChange({ ...config, logoUrl: undefined })}
-                className="p-1.5 rounded-lg hover:bg-stone-200 text-stone-500"
+                className="p-1.5 rounded-lg hover:bg-stone-200 text-stone-500 cursor-pointer"
                 title="Remove logo"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
           ) : (
-            <label className="flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-stone-300 hover:border-indigo-400 bg-stone-50/50 hover:bg-indigo-50/30 cursor-pointer transition-all">
+            <label className="flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-stone-300 hover:border-emerald-500 bg-stone-50/50 hover:bg-emerald-50/40 cursor-pointer transition-all">
               <ImageIcon className="w-4 h-4 text-stone-400" />
               <span className="text-xs font-medium text-stone-600">Upload logo (PNG, JPG)</span>
               <input

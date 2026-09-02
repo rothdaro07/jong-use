@@ -280,10 +280,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </div>
         </div>
 
-        {/* User Profile Card & Back to Home */}
+        {/* User Status / Info Card */}
         <div className="pt-4 mt-6 border-t border-stone-200 space-y-2.5">
-          <div className="flex items-center justify-between p-2 rounded-xl bg-stone-50 md:bg-white border border-stone-200 shadow-xs">
-            <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center justify-between p-2.5 rounded-xl bg-stone-50 md:bg-white border border-stone-200 shadow-xs">
+            <div className="flex items-center gap-2.5 min-w-0">
               <div className="relative shrink-0">
                 {user?.photoURL ? (
                   <img
@@ -293,29 +293,31 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-emerald-600 text-white font-bold text-xs flex items-center justify-center">
-                    {user?.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
+                    {user?.displayName ? user.displayName.charAt(0).toUpperCase() : 'J'}
                   </div>
                 )}
                 <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white" />
               </div>
               <div className="min-w-0">
                 <div className="text-xs font-bold text-stone-900 truncate font-khmer">
-                  {user?.displayName || 'Creator'}
+                  {user?.displayName || (lang === 'km' ? 'អ្នកបង្កើតមាតិកា' : 'Creator')}
                 </div>
                 <div className="text-[10px] text-stone-400 truncate">
-                  {user?.email || 'Logged in'}
+                  {lang === 'km' ? 'ស្ទូឌីយោរួចរាល់' : 'Studio Active'}
                 </div>
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="p-1.5 text-stone-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
-              title="Sign out"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
+            {user && !user.isAnonymous && (
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="p-1.5 text-stone-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                title="Sign out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           <button

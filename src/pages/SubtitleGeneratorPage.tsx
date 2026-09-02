@@ -262,16 +262,16 @@ export const SubtitleGeneratorPage: React.FC<SubtitleGeneratorPageProps> = ({
         {/* 1-Click Fast Presets */}
         <div className="mt-4 pt-3 border-t border-stone-200/80 flex flex-wrap items-center gap-2">
           <span className="text-xs font-semibold text-stone-700 font-khmer flex items-center gap-1 mr-1">
-            <Sliders className="w-3.5 h-3.5 text-amber-500" />
+            <Sliders className="w-3.5 h-3.5 text-emerald-600" />
             Preset ពេញនិយម:
           </span>
 
           <button
             onClick={() => handleApplyPreset('tiktok_fast')}
-            className={`text-xs px-3 py-1.5 rounded-lg font-khmer transition-all flex items-center gap-1 border shadow-xs ${
+            className={`text-xs px-3 py-1.5 rounded-lg font-khmer transition-all flex items-center gap-1 border shadow-xs cursor-pointer ${
               speed === 'ultra_fast' && chunkMode === 'short_punchy'
-                ? 'bg-amber-500 text-stone-950 font-bold border-amber-600'
-                : 'bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100'
+                ? 'bg-emerald-600 text-white font-bold border-emerald-700 shadow-sm'
+                : 'bg-stone-100 text-stone-800 border-stone-200 hover:bg-emerald-50 hover:text-emerald-900 hover:border-emerald-300'
             }`}
           >
             <span>TikTok / Shorts (ពាក្យខ្លីៗ + យ៉ាងលឿន)</span>
@@ -279,10 +279,10 @@ export const SubtitleGeneratorPage: React.FC<SubtitleGeneratorPageProps> = ({
 
           <button
             onClick={() => handleApplyPreset('dynamic')}
-            className={`text-xs px-3 py-1.5 rounded-lg font-khmer transition-all flex items-center gap-1 border shadow-xs ${
+            className={`text-xs px-3 py-1.5 rounded-lg font-khmer transition-all flex items-center gap-1 border shadow-xs cursor-pointer ${
               speed === 'fast' && chunkMode === 'medium_short'
-                ? 'bg-amber-500 text-stone-950 font-bold border-amber-600'
-                : 'bg-stone-100 text-stone-800 border-stone-200 hover:bg-stone-200'
+                ? 'bg-emerald-600 text-white font-bold border-emerald-700 shadow-sm'
+                : 'bg-stone-100 text-stone-800 border-stone-200 hover:bg-emerald-50 hover:text-emerald-900 hover:border-emerald-300'
             }`}
           >
             <span>Fast Speak (ឃ្លាខ្លី + លឿន)</span>
@@ -290,10 +290,10 @@ export const SubtitleGeneratorPage: React.FC<SubtitleGeneratorPageProps> = ({
 
           <button
             onClick={() => handleApplyPreset('standard')}
-            className={`text-xs px-3 py-1.5 rounded-lg font-khmer transition-all flex items-center gap-1 border shadow-xs ${
+            className={`text-xs px-3 py-1.5 rounded-lg font-khmer transition-all flex items-center gap-1 border shadow-xs cursor-pointer ${
               speed === 'normal' && chunkMode === 'standard'
-                ? 'bg-amber-500 text-stone-950 font-bold border-amber-600'
-                : 'bg-stone-100 text-stone-800 border-stone-200 hover:bg-stone-200'
+                ? 'bg-emerald-600 text-white font-bold border-emerald-700 shadow-sm'
+                : 'bg-stone-100 text-stone-800 border-stone-200 hover:bg-emerald-50 hover:text-emerald-900 hover:border-emerald-300'
             }`}
           >
             <span>ធម្មតា (Standard)</span>
@@ -308,13 +308,13 @@ export const SubtitleGeneratorPage: React.FC<SubtitleGeneratorPageProps> = ({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-sm font-semibold text-stone-800 font-khmer flex items-center gap-1.5">
-                  <AlignLeft className="w-4 h-4 text-amber-600" />
+                  <AlignLeft className="w-4 h-4 text-emerald-600" />
                   Script / អត្ថបទសន្ទនា
                 </label>
                 {script && (
                   <button
                     onClick={() => setScript('')}
-                    className="text-xs text-stone-400 hover:text-stone-600 transition-colors"
+                    className="text-xs text-stone-400 hover:text-stone-600 transition-colors cursor-pointer"
                   >
                     Clear
                   </button>
@@ -325,7 +325,7 @@ export const SubtitleGeneratorPage: React.FC<SubtitleGeneratorPageProps> = ({
                 onChange={(e) => setScript(e.target.value)}
                 placeholder={t('srtInputPlaceholder')}
                 rows={7}
-                className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm font-khmer leading-relaxed resize-none transition-all placeholder:text-stone-400"
+                className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm font-khmer leading-relaxed resize-none transition-all placeholder:text-stone-400"
               />
               <div className="flex items-center justify-between text-xs text-stone-400 mt-1.5 font-khmer">
                 <span>{script.length} តួអក្សរ</span>
@@ -339,7 +339,7 @@ export const SubtitleGeneratorPage: React.FC<SubtitleGeneratorPageProps> = ({
                 <label className="text-xs font-semibold uppercase tracking-wider text-stone-500 font-khmer">
                   {t('srtPacing')}
                 </label>
-                <span className="text-[11px] font-mono text-amber-600 font-bold">
+                <span className="text-[11px] font-mono text-emerald-700 font-bold">
                   {speed === 'ultra_fast' ? '~220 WPM (យ៉ាងលឿន)' : speed === 'fast' ? '~170 WPM (លឿន)' : speed === 'normal' ? '~130 WPM (មធ្យម)' : '~95 WPM (យឺត)'}
                 </span>
               </div>
@@ -349,21 +349,26 @@ export const SubtitleGeneratorPage: React.FC<SubtitleGeneratorPageProps> = ({
                   { id: 'fast', label: 'លឿន', desc: '170 WPM' },
                   { id: 'normal', label: 'ធម្មតា', desc: '130 WPM' },
                   { id: 'slow', label: 'យឺត', desc: '95 WPM' },
-                ].map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setSpeed(item.id as any)}
-                    className={`px-2.5 py-2 rounded-xl text-xs font-khmer border transition-all text-center ${
-                      speed === item.id
-                        ? 'border-amber-500 bg-amber-50 text-amber-900 font-bold shadow-xs ring-1 ring-amber-500/20'
-                        : 'border-stone-200 bg-stone-50/50 text-stone-600 hover:bg-stone-100'
-                    }`}
-                  >
-                    <div>{item.label}</div>
-                    <div className="text-[10px] text-stone-400">{item.desc}</div>
-                  </button>
-                ))}
+                ].map((item) => {
+                  const isSelected = speed === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setSpeed(item.id as any)}
+                      className={`px-2.5 py-2 rounded-xl text-xs font-khmer border transition-all text-center cursor-pointer ${
+                        isSelected
+                          ? 'border-emerald-600 bg-emerald-600 text-white font-bold shadow-sm'
+                          : 'border-stone-200 bg-stone-50/70 text-stone-700 hover:bg-emerald-50 hover:border-emerald-200'
+                      }`}
+                    >
+                      <div>{item.label}</div>
+                      <div className={`text-[10px] ${isSelected ? 'text-emerald-100' : 'text-stone-400'}`}>
+                        {item.desc}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -382,24 +387,29 @@ export const SubtitleGeneratorPage: React.FC<SubtitleGeneratorPageProps> = ({
                   { mode: 'short_punchy', chars: 16, label: 'ពាក្យខ្លីៗ 1-3 ពាក្យ', desc: 'TikTok / Shorts' },
                   { mode: 'medium_short', chars: 26, label: 'ឃ្លាខ្លីល្មម', desc: '~26 តួអក្សរ' },
                   { mode: 'standard', chars: 45, label: 'ស្តង់ដារពេញ', desc: '~45 តួអក្សរ' },
-                ].map((item) => (
-                  <button
-                    key={item.mode}
-                    type="button"
-                    onClick={() => {
-                      setChunkMode(item.mode as any);
-                      setMaxChars(item.chars);
-                    }}
-                    className={`px-2.5 py-2 rounded-xl text-xs font-khmer border transition-all text-center ${
-                      chunkMode === item.mode
-                        ? 'border-amber-500 bg-amber-50 text-amber-900 font-bold shadow-xs'
-                        : 'border-stone-200 bg-stone-50/50 text-stone-600 hover:bg-stone-100'
-                    }`}
-                  >
-                    <div className="line-clamp-1">{item.label}</div>
-                    <div className="text-[10px] text-stone-400">{item.desc}</div>
-                  </button>
-                ))}
+                ].map((item) => {
+                  const isSelected = chunkMode === item.mode;
+                  return (
+                    <button
+                      key={item.mode}
+                      type="button"
+                      onClick={() => {
+                        setChunkMode(item.mode as any);
+                        setMaxChars(item.chars);
+                      }}
+                      className={`px-2.5 py-2 rounded-xl text-xs font-khmer border transition-all text-center cursor-pointer ${
+                        isSelected
+                          ? 'border-emerald-600 bg-emerald-600 text-white font-bold shadow-sm'
+                          : 'border-stone-200 bg-stone-50/70 text-stone-700 hover:bg-emerald-50 hover:border-emerald-200'
+                      }`}
+                    >
+                      <div className="line-clamp-1">{item.label}</div>
+                      <div className={`text-[10px] ${isSelected ? 'text-emerald-100' : 'text-stone-400'}`}>
+                        {item.desc}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Fine tuning slider */}
@@ -411,7 +421,7 @@ export const SubtitleGeneratorPage: React.FC<SubtitleGeneratorPageProps> = ({
                   max="60"
                   value={maxChars}
                   onChange={(e) => setMaxChars(parseInt(e.target.value, 10))}
-                  className="w-full accent-amber-500 cursor-pointer"
+                  className="w-full accent-emerald-600 cursor-pointer"
                 />
                 <span className="text-xs font-mono text-stone-700 w-8 text-right font-bold">{maxChars}</span>
               </div>
@@ -431,7 +441,7 @@ export const SubtitleGeneratorPage: React.FC<SubtitleGeneratorPageProps> = ({
                     step="0.5"
                     value={startOffset}
                     onChange={(e) => setStartOffset(parseFloat(e.target.value) || 0)}
-                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-stone-200 text-sm font-sans focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-stone-200 text-sm font-sans focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
               </div>
@@ -443,7 +453,7 @@ export const SubtitleGeneratorPage: React.FC<SubtitleGeneratorPageProps> = ({
                 <select
                   value={translateTo}
                   onChange={(e) => setTranslateTo(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm font-khmer focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                  className="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm font-khmer focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
                 >
                   <option value="none">ភាសាដើម (Original)</option>
                   <option value="Khmer">បកប្រែទៅ ខ្មែរ (Khmer)</option>
@@ -463,16 +473,16 @@ export const SubtitleGeneratorPage: React.FC<SubtitleGeneratorPageProps> = ({
             <button
               onClick={handleGenerate}
               disabled={loading || !script.trim()}
-              className="w-full py-3.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-stone-950 font-bold text-sm font-khmer shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm font-khmer shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               {loading ? (
                 <>
-                  <RefreshCw className="w-4 h-4 animate-spin text-stone-950" />
+                  <RefreshCw className="w-4 h-4 animate-spin text-white" />
                   <span>កំពុងបង្កើត Subtitle SRT ({speed})...</span>
                 </>
               ) : (
                 <>
-                  <Zap className="w-4 h-4 text-stone-950" />
+                  <Zap className="w-4 h-4 text-emerald-200" />
                   <span>បង្កើត Subtitle (Short Words & Fast Speak)</span>
                 </>
               )}
@@ -489,9 +499,9 @@ export const SubtitleGeneratorPage: React.FC<SubtitleGeneratorPageProps> = ({
                 <div className="flex p-1 bg-stone-100 rounded-xl">
                   <button
                     onClick={() => setActiveTab('interactive')}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg font-khmer transition-all ${
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg font-khmer transition-all cursor-pointer ${
                       activeTab === 'interactive'
-                        ? 'bg-white text-stone-900 shadow-xs'
+                        ? 'bg-emerald-600 text-white font-bold shadow-xs'
                         : 'text-stone-600 hover:text-stone-900'
                     }`}
                   >
@@ -499,9 +509,9 @@ export const SubtitleGeneratorPage: React.FC<SubtitleGeneratorPageProps> = ({
                   </button>
                   <button
                     onClick={() => setActiveTab('raw')}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg font-khmer transition-all ${
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg font-khmer transition-all cursor-pointer ${
                       activeTab === 'raw'
-                        ? 'bg-white text-stone-900 shadow-xs'
+                        ? 'bg-emerald-600 text-white font-bold shadow-xs'
                         : 'text-stone-600 hover:text-stone-900'
                     }`}
                   >
@@ -511,7 +521,7 @@ export const SubtitleGeneratorPage: React.FC<SubtitleGeneratorPageProps> = ({
 
                 {segments.length > 0 && (
                   <div className="text-xs text-stone-500 font-khmer flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 font-bold font-mono">
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-900 font-bold font-mono">
                       {segments.length} ឃ្លា
                     </span>
                     <span className="font-mono">~{durationMinutes}m {durationSecs}s</span>
@@ -524,7 +534,7 @@ export const SubtitleGeneratorPage: React.FC<SubtitleGeneratorPageProps> = ({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleCopy}
-                    className="p-2 text-xs rounded-lg border border-stone-200 text-stone-700 hover:bg-stone-50 transition-colors flex items-center gap-1.5"
+                    className="p-2 text-xs rounded-lg border border-stone-200 text-stone-700 hover:bg-emerald-50 hover:text-emerald-900 hover:border-emerald-300 transition-colors flex items-center gap-1.5 cursor-pointer"
                     title={t('srtCopyBtn')}
                   >
                     {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
@@ -533,19 +543,19 @@ export const SubtitleGeneratorPage: React.FC<SubtitleGeneratorPageProps> = ({
 
                   <button
                     onClick={handleDownloadSrt}
-                    className="px-3 py-1.5 text-xs rounded-lg bg-stone-900 text-white hover:bg-stone-800 transition-colors flex items-center gap-1.5 font-khmer font-semibold shadow-xs"
+                    className="px-3 py-1.5 text-xs rounded-lg bg-stone-900 text-white hover:bg-stone-800 transition-colors flex items-center gap-1.5 font-khmer font-semibold shadow-xs cursor-pointer"
                   >
-                    <Download className="w-4 h-4 text-amber-400" />
+                    <Download className="w-4 h-4 text-emerald-400" />
                     <span>{t('srtDownloadBtn')}</span>
                   </button>
 
                   {onNavigateToVideoStyler && (
                     <button
                       onClick={handleSendToStyler}
-                      className="px-3 py-1.5 text-xs rounded-lg bg-amber-500 text-stone-950 hover:bg-amber-600 transition-colors flex items-center gap-1.5 font-khmer font-bold shadow-xs cursor-pointer"
+                      className="px-3 py-1.5 text-xs rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors flex items-center gap-1.5 font-khmer font-bold shadow-xs cursor-pointer"
                       title={t('srtSendToStylerBtn')}
                     >
-                      <Video className="w-4 h-4 text-stone-950" />
+                      <Video className="w-4 h-4 text-white" />
                       <span>{t('srtSendToStylerBtn')}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
