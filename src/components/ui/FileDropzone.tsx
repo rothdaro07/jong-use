@@ -49,13 +49,46 @@ export const FileDropzone: React.FC<FileDropzoneProps> = ({
 
   const processFile = (file: File) => {
     if (!file.type.startsWith('image/')) {
-      alert('Please upload an image file (PNG, JPG, WebP)');
+      alert(lang === 'km' ? 'សូមជ្រើសរើសឯកសារជារូបភាព (PNG, JPG, WebP)' : 'Please upload an image file (PNG, JPG, WebP)');
       return;
     }
+
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === 'string') {
-        onImageSelected(reader.result, file);
+        const rawDataUrl = reader.result;
+        // Optimize and compress large images to max 2048x2048 for high speed & zero timeout
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 2048;
+          let width = img.naturalWidth || img.width;
+          let height = img.naturalHeight || img.height;
+
+          if (width > maxDim || height > maxDim || file.size > 2 * 1024 * 1024) {
+            if (width > height && width > maxDim) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else if (height > maxDim) {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.drawImage(img, 0, 0, width, height);
+              const optimized = canvas.toDataURL('image/jpeg', 0.9);
+              onImageSelected(optimized, file);
+              return;
+            }
+          }
+          onImageSelected(rawDataUrl, file);
+        };
+        img.onerror = () => {
+          onImageSelected(rawDataUrl, file);
+        };
+        img.src = rawDataUrl;
       }
     };
     reader.readAsDataURL(file);

@@ -2,7 +2,7 @@ import express from "express";
 import path from "path";
 import dotenv from "dotenv";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI, Modality } from "@google/genai";
+import { GoogleGenAI, Modality, ThinkingLevel } from "@google/genai";
 
 dotenv.config();
 
@@ -40,12 +40,16 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Helper to sanitize base64
+// Helper to sanitize base64 cleanly without catastrophic regex backtracking
 function cleanBase64(dataUrlOrBase64: string): { data: string; mimeType: string } {
-  if (dataUrlOrBase64.startsWith("data:")) {
-    const matches = dataUrlOrBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-    if (matches && matches.length === 3) {
-      return { mimeType: matches[1], data: matches[2] };
+  if (typeof dataUrlOrBase64 === "string" && dataUrlOrBase64.startsWith("data:")) {
+    const commaIdx = dataUrlOrBase64.indexOf(",");
+    if (commaIdx !== -1) {
+      const header = dataUrlOrBase64.slice(0, commaIdx);
+      const data = dataUrlOrBase64.slice(commaIdx + 1);
+      const mimeMatch = header.match(/data:([^;]+)/);
+      const mimeType = mimeMatch ? mimeMatch[1] : "image/jpeg";
+      return { mimeType, data };
     }
   }
   return { mimeType: "image/jpeg", data: dataUrlOrBase64 };
@@ -77,7 +81,7 @@ Requirements:
    - "summary": string (one short sentence describing document type, e.g. "Receipt", "National ID card", "Book page", "Signboard")`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.7-flash",
+      model: "gemini-3.6-flash",
       contents: [
         {
           inlineData: {
@@ -116,10 +120,13 @@ Requirements:
   } catch (error: any) {
     console.error("OCR API error:", error);
     const isQuota = error.status === 429 || String(error.message).includes("429") || String(error.message).includes("RESOURCE_EXHAUSTED") || String(error.message).includes("quota");
+    const isTimeout = String(error.message).includes("timeout") || String(error.message).includes("HeadersTimeoutError") || String(error.message).includes("fetch failed");
     const errMsg = isQuota
       ? "API quota reached for document analysis. Please try again shortly."
+      : isTimeout
+      ? "ការតភ្ជាប់ទៅកាន់ម៉ាស៊ីនមេចំណាយពេលយូរពេក។ សូមសាកល្បងម្ដងទៀត។"
       : error.message || "Failed to process OCR";
-    res.status(isQuota ? 429 : 500).json({ error: errMsg, isQuota });
+    res.status(isQuota ? 429 : isTimeout ? 504 : 500).json({ error: errMsg, isQuota, isTimeout });
   }
 });
 
@@ -369,7 +376,7 @@ Requirements:
    - "segments": array of objects: [{ "id": 1, "startTime": "00:00:01,000", "endTime": "00:00:01,800", "startMs": 1000, "endMs": 1800, "text": "..." }]`;
 
       const response = await ai.models.generateContent({
-        model: "gemini-3.7-flash",
+        model: "gemini-3.6-flash",
         contents: [{ text: prompt }],
         config: {
           responseMimeType: "application/json",

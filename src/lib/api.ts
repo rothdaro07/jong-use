@@ -1,5 +1,40 @@
 import { OcrResult, SubtitleSegment } from '../types';
 
+async function parseJsonResponse<T>(res: Response, defaultError: string): Promise<T> {
+  const contentType = res.headers.get('content-type') || '';
+  if (!res.ok) {
+    let errorMessage = defaultError;
+    if (contentType.includes('application/json')) {
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.error || errorData.message || defaultError;
+      } catch {
+        // ignore JSON parse error
+      }
+    } else {
+      const text = await res.text().catch(() => '');
+      if (res.status === 504 || text.includes('Gateway Timeout') || text.includes('Timeout')) {
+        errorMessage = 'សំណើត្រូវចំណាយពេលយូរពេក ឬដាច់ការភ្ជាប់ (Request timed out). សូមសាកល្បងម្ដងទៀត។';
+      } else if (res.status === 413) {
+        errorMessage = 'ទំហំរូបភាពធំពេក (Image payload too large). សូមជ្រើសរើសរូបភាពតូចជាងនេះ។';
+      } else {
+        errorMessage = `កំហុសពីម៉ាស៊ីនមេ (Server ${res.status}): ${defaultError}`;
+      }
+    }
+    throw new Error(errorMessage);
+  }
+
+  if (!contentType.includes('application/json')) {
+    const raw = await res.text().catch(() => '');
+    if (raw.trim().startsWith('<')) {
+      throw new Error('ម៉ាស៊ីនមេបានផ្ដល់ទម្រង់មិនត្រឹមត្រូវ។ សូមផ្ទុកទំព័រឡើងវិញ ឬសាកល្បងម្ដងទៀត។');
+    }
+    throw new Error('Unexpected response format from server');
+  }
+
+  return res.json();
+}
+
 export interface OcrRequest {
   imageBase64: string;
   mimeType?: string;
@@ -32,12 +67,7 @@ export async function generateSrt(req: GenerateSrtRequest): Promise<GenerateSrtR
     body: JSON.stringify(req),
   });
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'SRT generation failed' }));
-    throw new Error(err.error || 'Failed to generate SRT subtitles');
-  }
-
-  return res.json();
+  return parseJsonResponse<GenerateSrtResponse>(res, 'Failed to generate SRT subtitles');
 }
 
 export interface IdPhotoRequest {
@@ -69,12 +99,7 @@ export async function processOcr(req: OcrRequest): Promise<OcrResult> {
     body: JSON.stringify(req),
   });
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Network error' }));
-    throw new Error(err.error || 'Failed to process OCR');
-  }
-
-  return res.json();
+  return parseJsonResponse<OcrResult>(res, 'Failed to process OCR');
 }
 
 export async function generateIdPhoto(req: IdPhotoRequest): Promise<{ success: boolean; imageUrl: string }> {
@@ -84,12 +109,7 @@ export async function generateIdPhoto(req: IdPhotoRequest): Promise<{ success: b
     body: JSON.stringify(req),
   });
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Network error' }));
-    throw new Error(err.error || 'Failed to generate ID photo');
-  }
-
-  return res.json();
+  return parseJsonResponse<{ success: boolean; imageUrl: string }>(res, 'Failed to generate ID photo');
 }
 
 export async function generateTts(text: string, lang = 'km', voice = 'Kore'): Promise<{ audioBase64: string; audioUrl: string }> {
@@ -102,12 +122,7 @@ export async function generateTts(text: string, lang = 'km', voice = 'Kore'): Pr
     body: JSON.stringify({ text, lang, voice }),
   });
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Speech generation failed' }));
-    throw new Error(err.error || 'Failed to synthesize speech');
-  }
-
-  const data = await res.json();
+  const data = await parseJsonResponse<{ audioBase64: string; mimeType?: string }>(res, 'Failed to synthesize speech');
   return {
     audioBase64: data.audioBase64,
     audioUrl: data.audioBase64,
@@ -121,12 +136,7 @@ export async function processUpscale(req: UpscaleRequest): Promise<{ success: bo
     body: JSON.stringify(req),
   });
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Upscale failed' }));
-    throw new Error(err.error || 'Failed to upscale image');
-  }
-
-  return res.json();
+  return parseJsonResponse<{ success: boolean; imageUrl: string }>(res, 'Failed to upscale image');
 }
 
 export async function processBgRemove(req: BgRemoveRequest): Promise<{ success: boolean; imageUrl: string }> {
@@ -136,10 +146,5 @@ export async function processBgRemove(req: BgRemoveRequest): Promise<{ success: 
     body: JSON.stringify(req),
   });
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Background removal failed' }));
-    throw new Error(err.error || 'Failed to remove background');
-  }
-
-  return res.json();
+  return parseJsonResponse<{ success: boolean; imageUrl: string }>(res, 'Failed to remove background');
 }
