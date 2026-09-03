@@ -55,6 +55,30 @@ function cleanBase64(dataUrlOrBase64: string): { data: string; mimeType: string 
   return { mimeType: "image/jpeg", data: dataUrlOrBase64 };
 }
 
+// Candidate models for high-availability text & multimodal tasks
+const TEXT_MODELS = [
+  "gemini-3.1-flash-lite-preview",
+  "gemini-3.8-flash",
+  "gemini-3.6-flash",
+];
+
+async function generateWithFallback(ai: GoogleGenAI, models: string[], params: any) {
+  let lastError: any = null;
+  for (const model of models) {
+    try {
+      const response = await ai.models.generateContent({
+        ...params,
+        model,
+      });
+      return response;
+    } catch (err: any) {
+      console.warn(`Gemini model ${model} failed, trying next candidate... Status: ${err?.status || err?.message}`);
+      lastError = err;
+    }
+  }
+  throw lastError;
+}
+
 // 2. OCR API (Optical Character Recognition + Translation for Khmer & English)
 app.post("/api/ocr", async (req, res) => {
   try {
@@ -64,6 +88,10 @@ app.post("/api/ocr", async (req, res) => {
     }
 
     const cleaned = cleanBase64(imageBase64);
+    if (!cleaned.data || cleaned.data.trim().length === 0) {
+      return res.status(400).json({ error: "Invalid image data provided" });
+    }
+
     const ai = getAI();
 
     const prompt = `You are a specialized Khmer and Multilingual OCR (Optical Character Recognition) engine for Jong Use (ចង់ប្រើ).
@@ -80,8 +108,7 @@ Requirements:
    - "confidence": string ("High" | "Medium" | "Low")
    - "summary": string (one short sentence describing document type, e.g. "Receipt", "National ID card", "Book page", "Signboard")`;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
+    const response = await generateWithFallback(ai, TEXT_MODELS, {
       contents: [
         {
           inlineData: {
@@ -96,22 +123,41 @@ Requirements:
       },
     });
 
-    const text = response.text || "{}";
+    const rawText = response.text || "{}";
+    let cleanJson = rawText.trim();
+    if (cleanJson.startsWith("```")) {
+      cleanJson = cleanJson.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+    }
+
     try {
-      const parsed = JSON.parse(text);
+      let parsed = JSON.parse(cleanJson);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        parsed = parsed[0];
+      }
+
+      const extractedText = parsed.extractedText || parsed.text || parsed.content || "";
+      const detectedLanguage = parsed.detectedLanguage || parsed.language || "Khmer / English";
+      const translatedText = parsed.translatedText || parsed.translation || "";
+      let confidence = parsed.confidence;
+      if (typeof confidence === "number") {
+        confidence = confidence >= 0.8 ? "High" : confidence >= 0.5 ? "Medium" : "Low";
+      } else if (!confidence) {
+        confidence = "High";
+      }
+
       res.json({
         success: true,
-        detectedLanguage: parsed.detectedLanguage || "Khmer / English",
-        extractedText: parsed.extractedText || "",
-        translatedText: parsed.translatedText || "",
-        confidence: parsed.confidence || "High",
+        detectedLanguage,
+        extractedText: extractedText || (rawText.startsWith("{") ? "" : rawText),
+        translatedText,
+        confidence,
         summary: parsed.summary || "",
       });
     } catch {
       res.json({
         success: true,
         detectedLanguage: "Khmer / English",
-        extractedText: text,
+        extractedText: rawText,
         translatedText: "",
         confidence: "High",
         summary: "Scanned document",
@@ -119,14 +165,17 @@ Requirements:
     }
   } catch (error: any) {
     console.error("OCR API error:", error);
-    const isQuota = error.status === 429 || String(error.message).includes("429") || String(error.message).includes("RESOURCE_EXHAUSTED") || String(error.message).includes("quota");
-    const isTimeout = String(error.message).includes("timeout") || String(error.message).includes("HeadersTimeoutError") || String(error.message).includes("fetch failed");
+    const isQuota = error?.status === 429 || String(error?.message).includes("429") || String(error?.message).includes("RESOURCE_EXHAUSTED") || String(error?.message).includes("quota");
+    const isTimeout = String(error?.message).includes("timeout") || String(error?.message).includes("HeadersTimeoutError") || String(error?.message).includes("fetch failed");
+    const isUnavailable = error?.status === 503 || String(error?.message).includes("503") || String(error?.message).includes("UNAVAILABLE");
     const errMsg = isQuota
       ? "API quota reached for document analysis. Please try again shortly."
+      : isUnavailable
+      ? "ប្រព័ន្ធកំពុងមានអ្នកប្រើប្រាស់ច្រើន (High Demand). សូមសាកល្បងម្ដងទៀតក្នុងប៉ុន្មានវិនាទីទៀត។"
       : isTimeout
       ? "ការតភ្ជាប់ទៅកាន់ម៉ាស៊ីនមេចំណាយពេលយូរពេក។ សូមសាកល្បងម្ដងទៀត។"
-      : error.message || "Failed to process OCR";
-    res.status(isQuota ? 429 : isTimeout ? 504 : 500).json({ error: errMsg, isQuota, isTimeout });
+      : error?.message || "Failed to process OCR";
+    res.status(isQuota ? 429 : isTimeout ? 504 : isUnavailable ? 503 : 500).json({ error: errMsg, isQuota, isTimeout });
   }
 });
 
@@ -375,8 +424,7 @@ Requirements:
    - "srt": string (the exact valid .srt formatted string, e.g. "1\\n00:00:01,000 --> 00:00:01,800\\nឃ្លាខ្លី...\\n\\n")
    - "segments": array of objects: [{ "id": 1, "startTime": "00:00:01,000", "endTime": "00:00:01,800", "startMs": 1000, "endMs": 1800, "text": "..." }]`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.6-flash",
+      const response = await generateWithFallback(ai, TEXT_MODELS, {
         contents: [{ text: prompt }],
         config: {
           responseMimeType: "application/json",
