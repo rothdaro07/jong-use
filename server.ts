@@ -204,12 +204,124 @@ function pcmToWav(pcmData: Buffer, sampleRate = 24000, numChannels = 1, bitsPerS
   return Buffer.concat([header, pcmData]);
 }
 
-// 3. TTS API (Text-to-Speech via Gemini Native Audio or Synthesis)
+// Helper to clean audio base64 data URLs
+function cleanAudioBase64(dataUrlOrBase64: string, fallbackMime = "audio/webm"): { mimeType: string; data: string } {
+  if (dataUrlOrBase64.startsWith("data:")) {
+    const match = dataUrlOrBase64.match(/^data:([^;]+);base64,(.*)$/);
+    if (match) {
+      let mime = match[1].split(';')[0].trim().toLowerCase();
+      return { mimeType: mime || fallbackMime, data: match[2] };
+    }
+  }
+  return { mimeType: fallbackMime, data: dataUrlOrBase64 };
+}
+
+// 2.5 Voice Clone API (Analyze Khmer/English audio sample to extract vocal biometrics)
+app.post("/api/clone-voice", async (req, res) => {
+  try {
+    const { audioBase64, mimeType = "audio/webm", customName } = req.body;
+    if (!audioBase64 || typeof audioBase64 !== "string" || !audioBase64.trim()) {
+      return res.status(400).json({ error: "Missing voice audio sample to clone" });
+    }
+
+    const cleaned = cleanAudioBase64(audioBase64, mimeType);
+    if (!cleaned.data || cleaned.data.trim().length === 0) {
+      return res.status(400).json({ error: "Invalid audio data provided" });
+    }
+
+    const ai = getAI();
+
+    const prompt = `You are an expert audio engineer and vocal biometrics specialist for Khmer and multilingual speech synthesis.
+Analyze the provided speech recording to extract voice clone characteristics for synthesizing Khmer speech.
+
+Return a valid JSON object with the following fields:
+- "name": string (a descriptive name for this voice profile, e.g. "សំឡេងបុរសខ្មែរ រៀបរាប់ (Khmer Resonant Male)")
+- "nameKm": string (Khmer display name)
+- "gender": string ("Male" | "Female" | "Neutral")
+- "pitch": string ("Deep" | "Medium" | "High")
+- "pitchShiftSemitones": number (integer between -4 and 4, e.g. -2 for deep male, 0 for normal, 2 for higher pitch)
+- "timbre": string (e.g. "Warm & Resonant", "Crisp & Clear", "Gentle & Soft", "Authoritative & Deep", "Youthful & Energetic")
+- "pace": string ("Slow" | "Moderate" | "Fast")
+- "speedMultiplier": number (float between 0.85 and 1.2, where 1.0 is normal)
+- "bestBaseVoice": string (choose strictly from: "Fenrir" for deep/authoritative male, "Puck" for energetic/young male, "Charon" for calm/gentle male, "Kore" for warm/clear female, "Aoede" for lyrical/gentle female, "Zephyr" for smooth/conversational female)
+- "prosodyInstructions": string (detailed instruction describing the vocal rhythm, warmth, pauses, pitch nuance, and authentic Cambodian Khmer pronunciation style to recreate this voice)
+- "transcription": string (transcription of any Khmer or English words spoken in the audio sample, or empty if audio was only tones/vocalizations)`;
+
+    const response = await generateWithFallback(ai, TEXT_MODELS, {
+      contents: [
+        {
+          inlineData: {
+            data: cleaned.data,
+            mimeType: cleaned.mimeType,
+          },
+        },
+        { text: prompt },
+      ],
+      config: {
+        responseMimeType: "application/json",
+      },
+    });
+
+    const rawText = response.text || "{}";
+    let cleanJson = rawText.trim();
+    if (cleanJson.startsWith("```")) {
+      cleanJson = cleanJson.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+    }
+
+    let parsed: any = {};
+    try {
+      parsed = JSON.parse(cleanJson);
+      if (Array.isArray(parsed) && parsed.length > 0) parsed = parsed[0];
+    } catch {
+      parsed = {};
+    }
+
+    const id = `clone_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const finalGender = parsed.gender === "Female" ? "Female" : parsed.gender === "Neutral" ? "Neutral" : "Male";
+    const finalPitch = parsed.pitch === "High" ? "High" : parsed.pitch === "Deep" ? "Deep" : "Medium";
+    const finalPace = parsed.pace === "Slow" ? "Slow" : parsed.pace === "Fast" ? "Fast" : "Moderate";
+    const finalBaseVoice = ["Kore", "Puck", "Zephyr", "Fenrir", "Aoede", "Charon"].includes(parsed.bestBaseVoice)
+      ? parsed.bestBaseVoice
+      : finalGender === "Female" ? "Kore" : "Puck";
+
+    const profile = {
+      id,
+      name: customName?.trim() || parsed.name || (finalGender === "Female" ? "សំឡេងនារីចម្លង (Cloned Voice)" : "សំឡេងបុរសចម្លង (Cloned Voice)"),
+      nameKm: parsed.nameKm || customName?.trim() || "សំឡេងចម្លងផ្ទាល់ខ្លួន",
+      gender: finalGender,
+      pitch: finalPitch,
+      pitchShiftSemitones: typeof parsed.pitchShiftSemitones === "number" ? parsed.pitchShiftSemitones : 0,
+      timbre: parsed.timbre || "Warm & Clear",
+      pace: finalPace,
+      speedMultiplier: typeof parsed.speedMultiplier === "number" ? parsed.speedMultiplier : 1.0,
+      bestBaseVoice: finalBaseVoice,
+      prosodyInstructions: parsed.prosodyInstructions || `Vocal persona: ${finalGender}, ${finalPitch} pitch, ${parsed.timbre || "clear"} timbre. Speak with authentic Khmer intonation.`,
+      transcription: parsed.transcription || "",
+      sampleAudioUrl: audioBase64.startsWith("data:") ? audioBase64 : `data:${cleaned.mimeType};base64,${cleaned.data}`,
+      createdAt: Date.now(),
+      isPreset: false,
+    };
+
+    res.json({
+      success: true,
+      ...profile,
+    });
+  } catch (error: any) {
+    console.error("Voice clone API error:", error);
+    const isQuota = error?.status === 429 || String(error?.message).includes("429") || String(error?.message).includes("RESOURCE_EXHAUSTED");
+    res.status(isQuota ? 429 : 500).json({
+      error: isQuota ? "API quota reached for voice cloning. Please try again shortly." : error?.message || "Failed to analyze voice sample",
+    });
+  }
+});
+
+// 3. TTS API (Text-to-Speech via Gemini Native Audio or Cloned Synthesis)
 async function handleTts(req: express.Request, res: express.Response) {
   try {
     const text = (req.method === "POST" ? req.body.text : req.query.text) as string;
     const lang = (req.method === "POST" ? req.body.lang : req.query.lang) || "km";
-    const voice = (req.method === "POST" ? req.body.voice : req.query.voice) || "Kore";
+    let voice = (req.method === "POST" ? req.body.voice : req.query.voice) || "Kore";
+    const cloneProfile = req.method === "POST" ? req.body.cloneProfile : null;
     const speed = (req.method === "POST" ? req.body.speed : req.query.speed) || "normal";
 
     if (!text || !text.trim()) {
@@ -217,8 +329,25 @@ async function handleTts(req: express.Request, res: express.Response) {
     }
 
     const ai = getAI();
-    const prompt = `Read the following ${lang === "km" ? "Khmer" : "English"} text clearly, fluently, and naturally with polite and warm intonation:
+    let prompt = `Read the following ${lang === "km" ? "Khmer" : "English"} text clearly, fluently, and naturally with polite and warm intonation:
 "${text.trim()}"`;
+
+    if (cloneProfile) {
+      if (cloneProfile.bestBaseVoice) {
+        voice = cloneProfile.bestBaseVoice;
+      }
+      prompt = `You are an expert Khmer native voice actor synthesizing speech for a cloned vocal identity.
+Vocal Profile Persona:
+- Target Gender: ${cloneProfile.gender || "Natural"}
+- Pitch: ${cloneProfile.pitch || "Medium"}
+- Timbre / Texture: ${cloneProfile.timbre || "Warm & Clear"}
+- Cadence / Pace: ${cloneProfile.pace || "Moderate"}
+- Persona Guidance: ${cloneProfile.prosodyInstructions || "Speak with natural Cambodian Khmer intonation, respectful warmth, and clear articulation."}
+
+Task:
+Please read the following ${lang === "km" ? "Khmer" : "English"} text fluently, authentically, and expressively matching this voice persona:
+"${text.trim()}"`;
+    }
 
     const response = await ai.models.generateContent({
       model: "gemini-3.1-flash-tts-preview",
@@ -245,6 +374,8 @@ async function handleTts(req: express.Request, res: express.Response) {
           success: true,
           audioBase64: `data:audio/wav;base64,${wavBuffer.toString("base64")}`,
           mimeType: "audio/wav",
+          voiceUsed: voice,
+          isCloned: !!cloneProfile,
         });
       }
 

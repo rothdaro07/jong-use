@@ -24,10 +24,29 @@ export interface QrCodeConfig {
   title?: string;
 }
 
+export interface ClonedVoiceProfile {
+  id: string;
+  name: string;
+  nameKm?: string;
+  gender: 'Male' | 'Female' | 'Neutral';
+  pitch: 'Deep' | 'Medium' | 'High';
+  pitchShiftSemitones?: number;
+  timbre: string;
+  pace: 'Slow' | 'Moderate' | 'Fast';
+  speedMultiplier?: number;
+  bestBaseVoice: string; // 'Kore' | 'Puck' | 'Zephyr' | 'Fenrir' | 'Aoede' | 'Charon'
+  prosodyInstructions: string;
+  transcription?: string;
+  sampleAudioUrl?: string;
+  createdAt: number;
+  isPreset?: boolean;
+}
+
 export interface TtsJob {
   text: string;
   lang: string;
   voice: string;
+  cloneProfile?: ClonedVoiceProfile;
   audioUrl?: string;
   audioBase64?: string;
 }
@@ -119,4 +138,67 @@ export interface UsageLogItem {
   timestamp: number;
   previewUrl?: string;
   summary?: string;
+  tokensDeducted?: number;
+  tokensRemaining?: number;
+  userEmail?: string;
+}
+
+export type SubscriptionPlanId = 'free' | 'creator_pro' | 'studio_ultra';
+
+export interface PlanFeature {
+  textKm: string;
+  textEn: string;
+  included: boolean;
+}
+
+export interface SubscriptionPlan {
+  id: SubscriptionPlanId;
+  name: string;
+  nameKm: string;
+  badge?: string;
+  priceMonthlyUSD: number;
+  priceYearlyUSD: number; // billed annually
+  priceMonthlyKHR: number;
+  tokensPerMonth: number;
+  descriptionKm: string;
+  descriptionEn: string;
+  features: PlanFeature[];
+}
+
+export interface UserAccountData {
+  uid: string;
+  email: string;
+  displayName: string;
+  photoURL?: string;
+  isAnonymous: boolean;
+  plan: SubscriptionPlanId;
+  tokens: number;
+  totalTokensUsed: number;
+  operationsCount: number;
+  planBillingCycle?: 'monthly' | 'yearly';
+  planExpiresAt?: number;
+  createdAt?: number;
+  lastActiveAt?: number;
+}
+
+export interface TokenTransaction {
+  id: string;
+  userId: string;
+  userEmail: string;
+  tool: string;
+  title: string;
+  tokensDeducted: number;
+  tokensRemaining: number;
+  timestamp: number;
+  summary?: string;
+  status: 'success' | 'failed';
+}
+
+export interface TokenTopupPack {
+  id: string;
+  tokens: number;
+  priceUSD: number;
+  priceKHR: number;
+  badge?: string;
+  bonus?: string;
 }

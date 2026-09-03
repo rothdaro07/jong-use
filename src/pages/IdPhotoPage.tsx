@@ -154,7 +154,7 @@ export const IdPhotoPage: React.FC<IdPhotoPageProps> = ({
             <IdPhotoResult imageUrl={resultImage} lang={lang} onReset={handleReset} />
           ) : (
             <Card className="min-h-[480px] flex flex-col items-center justify-center text-center p-8 border-dashed bg-stone-50/50">
-              <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
                 <UserCheck className="w-8 h-8" />
               </div>
               <h4 className="font-bayon text-base text-stone-800 mb-1">

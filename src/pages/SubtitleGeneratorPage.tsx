@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Language, SubtitleSegment } from '../types';
 import { translations } from '../lib/i18n';
 import { generateSrt } from '../lib/api';
+import { calculateSrtTokens } from '../data/plans';
 import {
   parseSrt,
   segmentsToSrt,
@@ -36,6 +37,8 @@ interface SubtitleGeneratorPageProps {
   onLogActivity?: (tool: 'srt', title: string, summary?: string) => void;
   showToast?: (msg: string, type?: 'success' | 'error') => void;
   onNavigateToVideoStyler?: (srtContent: string, segments: SubtitleSegment[]) => void;
+  tokens?: number;
+  onCheckAndDeductTokens?: (cost: number, tool: string, title: string, summary?: string) => Promise<boolean>;
 }
 
 export const SubtitleGeneratorPage: React.FC<SubtitleGeneratorPageProps> = ({
@@ -43,6 +46,8 @@ export const SubtitleGeneratorPage: React.FC<SubtitleGeneratorPageProps> = ({
   onLogActivity,
   showToast,
   onNavigateToVideoStyler,
+  tokens,
+  onCheckAndDeductTokens,
 }) => {
   const t = (key: keyof typeof translations['km']) => {
     return translations[lang]?.[key] || translations['km'][key] || key;
@@ -62,6 +67,9 @@ export const SubtitleGeneratorPage: React.FC<SubtitleGeneratorPageProps> = ({
 
   const [segments, setSegments] = useState<SubtitleSegment[]>([]);
   const [rawSrt, setRawSrt] = useState<string>('');
+
+  const isKhmer = lang === 'km';
+  const srtTokenEstimate = calculateSrtTokens(script, isKhmer);
 
   const handleApplyPreset = (preset: 'tiktok_fast' | 'dynamic' | 'standard' | 'cinematic') => {
     if (preset === 'tiktok_fast') {
@@ -91,6 +99,16 @@ export const SubtitleGeneratorPage: React.FC<SubtitleGeneratorPageProps> = ({
     if (!script.trim()) {
       setError(lang === 'km' ? 'សូមបញ្ចូល Script ឬអត្ថបទជាមុនសិន' : 'Please enter or paste your script first');
       return;
+    }
+
+    if (onCheckAndDeductTokens) {
+      const allowed = await onCheckAndDeductTokens(
+        srtTokenEstimate.tokens,
+        'srt',
+        `Subtitle SRT (${speed} - ${srtTokenEstimate.chars} chars)`,
+        `${srtTokenEstimate.chars} chars, ${srtTokenEstimate.words} words • ${srtTokenEstimate.tierDescription}`
+      );
+      if (!allowed) return;
     }
 
     setLoading(true);
@@ -327,10 +345,49 @@ export const SubtitleGeneratorPage: React.FC<SubtitleGeneratorPageProps> = ({
                 rows={7}
                 className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm font-khmer leading-relaxed resize-none transition-all placeholder:text-stone-400"
               />
-              <div className="flex items-center justify-between text-xs text-stone-400 mt-1.5 font-khmer">
-                <span>{script.length} តួអក្សរ</span>
-                <span>{script.split(/\s+/).filter(Boolean).length} ពាក្យ</span>
+              <div className="flex items-center justify-between text-xs text-stone-500 mt-1.5 font-khmer flex-wrap gap-1">
+                <div className="flex items-center gap-2">
+                  <span>{srtTokenEstimate.chars} {isKhmer ? 'តួអក្សរ' : 'chars'}</span>
+                  <span>•</span>
+                  <span>{srtTokenEstimate.words} {isKhmer ? 'ពាក្យ' : 'words'}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-stone-400 font-khmer">
+                    {srtTokenEstimate.isOverBase
+                      ? (isKhmer ? 'គិតតាមប្រវែង (>200 chars)' : 'Length scaled (>200 chars)')
+                      : (isKhmer ? 'មូលដ្ឋាន (≤200 chars)' : 'Base (≤200 chars)')}
+                  </span>
+                  <span
+                    className={`text-xs font-mono px-2 py-0.5 rounded-full font-bold ${
+                      srtTokenEstimate.isOverBase
+                        ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                        : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                    }`}
+                  >
+                    {srtTokenEstimate.tokens} Tokens
+                  </span>
+                </div>
               </div>
+
+              {/* Dynamic notice if script exceeds 200 chars */}
+              {srtTokenEstimate.isOverBase && (
+                <div className="mt-2 flex items-center justify-between px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-khmer">
+                  <div className="flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <span className="font-bold">
+                      {isKhmer ? 'Script លើសពី 200 តួអក្សរ:' : 'Script exceeds 200 chars:'}
+                    </span>
+                    <span>
+                      {isKhmer
+                        ? `គណនា ${srtTokenEstimate.tokens} Tokens (+10 Tokens រាល់ 200 តួអក្សរ)`
+                        : `Calculated ${srtTokenEstimate.tokens} Tokens (+10 per 200 chars)`}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono font-bold bg-amber-200/90 text-amber-950 px-2 py-0.5 rounded-md shrink-0 ml-2">
+                    {srtTokenEstimate.tierDescription}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Pacing Speed (4 Options including Ultra Fast) */}
@@ -484,6 +541,9 @@ export const SubtitleGeneratorPage: React.FC<SubtitleGeneratorPageProps> = ({
                 <>
                   <Zap className="w-4 h-4 text-emerald-200" />
                   <span>បង្កើត Subtitle (Short Words & Fast Speak)</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-800/80 text-emerald-100 font-bold ml-1">
+                    {srtTokenEstimate.tokens} Tokens
+                  </span>
                 </>
               )}
             </button>
@@ -605,7 +665,7 @@ export const SubtitleGeneratorPage: React.FC<SubtitleGeneratorPageProps> = ({
                     title="បន្ថយល្បឿន 0.8 ដង"
                     className="px-2 py-1 text-xs rounded-lg bg-white hover:bg-stone-100 text-stone-700 border border-stone-200 font-khmer transition-colors flex items-center gap-1 shadow-xs"
                   >
-                    <Rewind className="w-3 h-3 text-blue-600" />
+                    <Rewind className="w-3 h-3 text-emerald-600" />
                     <span>{t('srtSlowDown')}</span>
                   </button>
                 </div>

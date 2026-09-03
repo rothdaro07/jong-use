@@ -19,7 +19,7 @@ export const PageContainer: React.FC<PageContainerProps> = ({
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           {icon && (
-            <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center shadow-xs">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center shadow-xs">
               {icon}
             </div>
           )}

@@ -1,28 +1,34 @@
 import React, { useState } from 'react';
-import { User } from 'firebase/auth';
-import { Language, SubtitleSegment } from '../types';
-import { translations } from '../lib/i18n';
-import { logoutUser } from '../firebase';
 import { SubtitleGeneratorPage } from './SubtitleGeneratorPage';
 import { VideoSubtitleStylerPage } from './VideoSubtitleStylerPage';
 import { OcrPage } from './OcrPage';
 import { QrPage } from './QrPage';
 import { TtsPage } from './TtsPage';
 import { HistoryPage } from './HistoryPage';
+import { Language, SubtitleSegment, SubscriptionPlanId, UserAccountData } from '../types';
+import { logoutUser } from '../firebase';
+import { User } from 'firebase/auth';
+import { translations } from '../lib/i18n';
+import { TOOL_TOKEN_COSTS } from '../data/plans';
 import {
   FileCode,
   Video,
   FileText,
   QrCode,
   Volume2,
-  History,
+  Clock,
   LogOut,
+  ChevronRight,
   Search,
   Settings,
   HelpCircle,
   Home,
   Menu,
   X,
+  Coins,
+  Zap,
+  TrendingUp,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface DashboardPageProps {
@@ -34,6 +40,14 @@ interface DashboardPageProps {
   logActivity: (tool: any, title: string, summary: string, previewUrl?: string) => void;
   clearHistory: () => void;
   showToast: (msg: string, type?: 'success' | 'error') => void;
+  tokens: number;
+  plan: SubscriptionPlanId;
+  account: UserAccountData | null;
+  onOpenSubscription: () => void;
+  onOpenUsageModal: () => void;
+  deductTokens: (cost: number, tool: string, title: string, summary?: string) => Promise<{ success: boolean; remaining: number }>;
+  hasEnoughTokens: (cost: number) => boolean;
+  onOpenTokenDepleted: (required: number, toolName: string) => void;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
@@ -45,6 +59,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   logActivity,
   clearHistory,
   showToast,
+  tokens,
+  plan,
+  account,
+  onOpenSubscription,
+  onOpenUsageModal,
+  deductTokens,
+  hasEnoughTokens,
+  onOpenTokenDepleted,
 }) => {
   const [activeTab, setActiveTab] = useState<string>(
     initialTab === 'dashboard' || initialTab === 'overview' ? 'srt' : initialTab
@@ -72,178 +94,240 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     }
   };
 
+  const handleCheckAndDeduct = async (
+    cost: number,
+    tool: string,
+    title: string,
+    summary?: string
+  ): Promise<boolean> => {
+    if (!hasEnoughTokens(cost)) {
+      const toolNames: Record<string, string> = {
+        srt: lang === 'km' ? 'បង្កើត Subtitle SRT' : 'Subtitle SRT Generator',
+        videostyle: lang === 'km' ? 'Video Subtitle Styler' : 'Video Subtitle Styler',
+        ocr: lang === 'km' ? 'OCR អានអក្សរ' : 'Document OCR',
+        tts: lang === 'km' ? 'សំឡេង Khmer TTS' : 'Khmer TTS Voice',
+        qr: lang === 'km' ? 'បង្កើត QR Code' : 'Custom QR Code',
+      };
+      onOpenTokenDepleted(cost, toolNames[tool] || tool);
+      return false;
+    }
+
+    const res = await deductTokens(cost, tool, title, summary);
+    return res.success;
+  };
+
   const toolsList = [
     {
       id: 'srt',
       titleKm: 'បង្កើត Subtitle (.SRT)',
       titleEn: 'Subtitle SRT Generator',
       icon: FileCode,
-      descKm: 'បម្លែង Script ទៅជា SRT មាន Timing ច្បាស់',
-      descEn: 'Generate timed subtitle files automatically',
-      badge: 'Popular',
     },
     {
       id: 'videostyle',
       titleKm: 'Style Subtitle លើវីដេអូ',
       titleEn: 'Video Subtitle Styler',
       icon: Video,
-      descKm: 'តុបតែង Font ខ្មែរ (គូលែន បាត់ដំបង) លើវីដេអូ',
-      descEn: 'Burn-in Khmer animated captions onto video',
-      badge: 'Viral',
     },
     {
       id: 'ocr',
-      titleKm: 'OCR អានអក្សរពីរូបភាព',
-      titleEn: 'Image & Doc OCR',
+      titleKm: 'OCR អានអក្សររូបភាព',
+      titleEn: 'Document & Image OCR',
       icon: FileText,
-      descKm: 'ស្រង់អក្សរខ្មែរ និងអង់គ្លេសពីរូបថត ឯកសារ',
-      descEn: 'Extract text from photos and PDFs',
-      badge: 'AI Vision',
+    },
+    {
+      id: 'tts',
+      titleKm: 'អានសំឡេង Khmer TTS',
+      titleEn: 'Khmer TTS & Voice Cloning',
+      icon: Volume2,
     },
     {
       id: 'qr',
       titleKm: 'បង្កើត QR Code ស្អាតៗ',
-      titleEn: 'Custom QR Code',
+      titleEn: 'Custom Styled QR',
       icon: QrCode,
-      descKm: 'បង្កើត QR Code ជាមួយ Logo និងពណ៌ទាន់សម័យ',
-      descEn: 'Generate branded QR codes with logos',
-      badge: 'Design',
-    },
-    {
-      id: 'tts',
-      titleKm: 'អានសំឡេង TTS',
-      titleEn: 'Khmer Voice TTS',
-      icon: Volume2,
-      descKm: 'បម្លែងអត្ថបទទៅជាសំឡេងនិយាយភាសាខ្មែរពីរោះ',
-      descEn: 'Convert text to natural Khmer audio',
-      badge: 'Audio',
     },
     {
       id: 'history',
-      titleKm: 'ប្រវត្តិ & Cloud Files',
-      titleEn: 'Cloud Projects',
-      icon: History,
-      descKm: 'ឯកសារដែលបានរក្សាទុកក្នុងគណនី',
-      descEn: 'Saved cloud projects & exports',
-      badge: `${logs.length}`,
+      titleKm: 'ប្រវត្តិនៃការប្រើប្រាស់',
+      titleEn: 'Activity History',
+      icon: Clock,
+      badge: logs.length > 0 ? `${logs.length}` : undefined,
+      badgeColor: 'bg-stone-200 text-stone-700',
     },
   ];
 
-  const filteredTools = toolsList.filter((item) => {
-    if (!searchQuery.trim()) return true;
-    const query = searchQuery.toLowerCase();
+  const filteredTools = toolsList.filter((tool) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
     return (
-      item.titleKm.toLowerCase().includes(query) ||
-      item.titleEn.toLowerCase().includes(query) ||
-      item.descKm.toLowerCase().includes(query) ||
-      item.descEn.toLowerCase().includes(query)
+      tool.titleKm.toLowerCase().includes(q) ||
+      tool.titleEn.toLowerCase().includes(q) ||
+      tool.id.toLowerCase().includes(q)
     );
   });
 
+  const getPlanName = () => {
+    switch (plan) {
+      case 'studio_ultra':
+        return 'Ultra';
+      case 'creator_pro':
+        return 'Pro';
+      default:
+        return 'Free';
+    }
+  };
+
+  const userEmail = user?.email || account?.email || 'guest@jonguse.app';
+
   return (
-    <div className="relative min-h-[calc(100vh-4rem)] flex flex-col md:flex-row bg-[#f8fafc]">
-      {/* Mobile Header Bar: Clean White Background with Menu Icon & Title on the Left */}
-      <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white text-stone-900 border-b border-stone-200 shadow-xs sticky top-16 z-30">
+    <div className="flex flex-col md:flex-row min-h-[calc(100vh-4rem)] bg-[#f8fafc]">
+      {/* Mobile Top Controls Bar */}
+      <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-stone-200 sticky top-16 z-30 shadow-xs">
         <button
           type="button"
-          onClick={() => setLeftSidebarOpen(true)}
-          className="flex items-center gap-2.5 p-1.5 -ml-1.5 rounded-xl hover:bg-stone-100 active:scale-95 text-stone-800 transition-all cursor-pointer"
-          title="Open tools menu"
+          onClick={() => setLeftSidebarOpen(!leftSidebarOpen)}
+          className="p-2 -ml-2 rounded-xl text-stone-700 hover:bg-stone-100 flex items-center gap-2 cursor-pointer font-khmer text-xs font-bold"
         >
-          <Menu className="w-5 h-5 text-stone-700 shrink-0" />
-          <span className="font-bold font-khmer text-sm text-stone-900">
-            {lang === 'km' ? 'ឧបករណ៍ទាំងអស់' : 'All Tools'}
-          </span>
+          {leftSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          <span>{lang === 'km' ? 'ម៉ឺនុយឧបករណ៍' : 'Menu'}</span>
         </button>
 
-        <span className="text-xs font-khmer font-semibold px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200">
-          {toolsList.find((t) => t.id === activeTab)?.titleKm || 'Studio'}
-        </span>
+        {/* Mobile Token Counter */}
+        <button
+          type="button"
+          onClick={onOpenUsageModal}
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-mono font-bold"
+        >
+          <Coins className="w-3.5 h-3.5 text-emerald-600" />
+          <span>{tokens.toLocaleString()}</span>
+        </button>
       </div>
 
-      {/* Mobile Overlay Backdrop */}
-      {leftSidebarOpen && (
-        <div
-          onClick={() => setLeftSidebarOpen(false)}
-          className="fixed inset-0 bg-stone-900/50 backdrop-blur-xs z-50 md:hidden transition-opacity"
-        />
-      )}
-
-      {/* Left Sidebar (Slide-in Drawer from Left with high z-index on Mobile, Fixed Sidebar on Desktop) */}
+      {/* Left Navigation Sidebar */}
       <aside
-        id="dashboard-left-sidebar"
         className={`
-          fixed inset-y-0 left-0 z-50 w-72 sm:w-80 bg-white border-r border-stone-200 flex flex-col justify-between p-4 sm:p-5 shadow-2xl transition-transform duration-300 ease-in-out
-          md:static md:z-auto md:w-72 lg:w-80 md:bg-[#f8fafc] md:shadow-xs md:translate-x-0
+          fixed md:sticky top-16 z-30
+          w-72 bg-white md:bg-stone-50/90
+          border-r border-stone-200
+          p-4 sm:p-5 flex flex-col justify-between
+          h-[calc(100vh-4rem)] overflow-y-auto
+          transition-transform duration-200 ease-in-out
           ${leftSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}
       >
         <div className="space-y-4">
-          {/* Mobile Drawer Top Header with Title and Close Button */}
-          <div className="flex md:hidden items-center justify-between pb-3 border-b border-stone-200">
-            <div className="flex items-center gap-2">
-              <Menu className="w-5 h-5 text-emerald-600" />
-              <span className="font-bold font-khmer text-sm text-stone-900">
-                {lang === 'km' ? 'ឧបករណ៍ទាំងអស់' : 'All Tools'}
+          {/* Quick Search inside Sidebar */}
+          <div className="relative">
+            <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={lang === 'km' ? 'ស្វែងរកឧបករណ៍...' : 'Search tools...'}
+              className="w-full pl-9 pr-3 py-2 bg-stone-100 md:bg-white rounded-xl border border-stone-200 text-xs font-khmer focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all placeholder:text-stone-400"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 text-xs p-0.5 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Account Token & Subscription Widget */}
+          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50 to-white border border-emerald-200 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-950 font-khmer">
+                <Coins className="w-4 h-4 text-emerald-600" />
+                <span>{lang === 'km' ? 'សមតុល្យ Token' : 'Token Balance'}</span>
+              </div>
+              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-600 text-white shadow-xs">
+                {getPlanName()}
               </span>
             </div>
+
+            <div className="flex items-baseline justify-between">
+              <div>
+                <span className="text-2xl font-black font-mono text-emerald-700">
+                  {tokens.toLocaleString()}
+                </span>
+                <span className="text-[11px] font-khmer text-stone-500 ml-1">Tokens</span>
+              </div>
+              <button
+                type="button"
+                onClick={onOpenUsageModal}
+                className="text-[11px] font-bold text-emerald-800 hover:text-emerald-950 underline font-khmer cursor-pointer"
+              >
+                {lang === 'km' ? 'ប្រវត្តិប្រើ' : 'History'}
+              </button>
+            </div>
+
+            {/* Email Label */}
+            <div className="text-[11px] text-stone-500 truncate font-mono bg-white/70 px-2 py-1 rounded-lg border border-emerald-100">
+              {userEmail}
+            </div>
+
+            {/* Upgrade / Top up button */}
             <button
               type="button"
-              onClick={() => setLeftSidebarOpen(false)}
-              className="p-1.5 rounded-xl hover:bg-stone-100 text-stone-500 hover:text-stone-900 transition-colors"
+              onClick={onOpenSubscription}
+              className="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-bold text-xs font-khmer flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+              <span>{lang === 'km' ? 'ជាវគម្រោង / ទិញ Token' : 'Get More Tokens'}</span>
             </button>
           </div>
 
-          {/* Search Box */}
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
-            <input
-              type="text"
-              placeholder={lang === 'km' ? 'ស្វែងរកឧបករណ៍...' : 'Search tools...'}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-white rounded-xl border border-stone-200 text-xs font-khmer text-stone-900 placeholder:text-stone-400 focus:outline-emerald-500 shadow-xs"
-            />
-          </div>
-
-          {/* Main Navigation Menu */}
+          {/* Primary Tools Navigation List */}
           <div className="space-y-1">
             <div className="px-2 pb-1 text-[11px] font-bold uppercase tracking-wider text-stone-400 font-khmer">
-              {lang === 'km' ? 'ឧបករណ៍ទាំងអស់' : 'All Tools'}
+              {lang === 'km' ? 'ឧបករណ៍ទាំងអស់ (Tools)' : 'AI Utilities'}
             </div>
 
             {filteredTools.map((tool) => {
-              const Icon = tool.icon;
               const isActive = activeTab === tool.id;
+              const Icon = tool.icon;
               const title = lang === 'km' ? tool.titleKm : tool.titleEn;
 
               return (
                 <button
                   key={tool.id}
-                  id={`sidebar-tool-${tool.id}`}
+                  type="button"
+                  id={`sidebar-tab-${tool.id}`}
                   onClick={() => {
                     setActiveTab(tool.id);
                     setLeftSidebarOpen(false);
                   }}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer font-khmer text-xs ${
-                    isActive
-                      ? 'bg-emerald-600 text-white font-bold shadow-sm'
-                      : 'text-stone-700 hover:text-stone-950 hover:bg-stone-100 md:hover:bg-stone-200/70 font-medium'
-                  }`}
+                  className={`
+                    w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-left text-xs font-khmer transition-all cursor-pointer group
+                    ${
+                      isActive
+                        ? 'bg-emerald-600 text-white font-bold shadow-sm'
+                        : 'text-stone-700 hover:bg-stone-100 md:hover:bg-stone-200/70'
+                    }
+                  `}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-stone-500'}`} />
+                    <Icon
+                      className={`w-4 h-4 shrink-0 transition-colors ${
+                        isActive
+                          ? 'text-white'
+                          : 'text-emerald-600 group-hover:text-emerald-700'
+                      }`}
+                    />
                     <span className="truncate">{title}</span>
                   </div>
 
                   {tool.badge && (
                     <span
-                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 ${
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md shrink-0 ml-1.5 font-mono ${
                         isActive
                           ? 'bg-emerald-700/80 text-white'
-                          : 'bg-stone-200 text-stone-700'
+                          : tool.badgeColor
                       }`}
                     >
                       {tool.badge}
@@ -262,20 +346,20 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
             <button
               type="button"
-              onClick={() => showToast(lang === 'km' ? 'ប្រព័ន្ធដំណើរការកំណែចុងក្រោយ v2.5' : 'System running v2.5', 'success')}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs text-stone-600 hover:text-stone-900 hover:bg-stone-100 md:hover:bg-stone-200/70 transition-colors font-khmer cursor-pointer"
+              onClick={onOpenSubscription}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs text-stone-700 hover:text-emerald-800 hover:bg-emerald-50 transition-colors font-khmer cursor-pointer"
             >
-              <Settings className="w-4 h-4 text-stone-400 shrink-0" />
-              <span>{lang === 'km' ? 'ការកំណត់' : 'Settings'}</span>
+              <Zap className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{lang === 'km' ? 'គម្រោង Subscription' : 'Subscription Plans'}</span>
             </button>
 
             <button
               type="button"
-              onClick={() => showToast(lang === 'km' ? 'ជំនួយតាម Telegram @jonguse_support' : 'Support via Telegram', 'success')}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs text-stone-600 hover:text-stone-900 hover:bg-stone-100 md:hover:bg-stone-200/70 transition-colors font-khmer cursor-pointer"
+              onClick={onOpenUsageModal}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs text-stone-700 hover:text-emerald-800 hover:bg-emerald-50 transition-colors font-khmer cursor-pointer"
             >
-              <HelpCircle className="w-4 h-4 text-stone-400 shrink-0" />
-              <span>{lang === 'km' ? 'ជំនួយ & ឯកសារ' : 'Help & Docs'}</span>
+              <Coins className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{lang === 'km' ? 'កំណត់ត្រាការប្រើប្រាស់' : 'Token Usage Logs'}</span>
             </button>
           </div>
         </div>
@@ -302,8 +386,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 <div className="text-xs font-bold text-stone-900 truncate font-khmer">
                   {user?.displayName || (lang === 'km' ? 'អ្នកបង្កើតមាតិកា' : 'Creator')}
                 </div>
-                <div className="text-[10px] text-stone-400 truncate">
-                  {lang === 'km' ? 'ស្ទូឌីយោរួចរាល់' : 'Studio Active'}
+                <div className="text-[10px] text-stone-400 font-mono truncate">
+                  {userEmail}
                 </div>
               </div>
             </div>
@@ -340,6 +424,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               onLogActivity={(tool, title, sum) => logActivity(tool, title, sum)}
               showToast={showToast}
               onNavigateToVideoStyler={handleNavigateToVideoStyler}
+              tokens={tokens}
+              onCheckAndDeductTokens={handleCheckAndDeduct}
             />
           )}
 
@@ -350,6 +436,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               showToast={showToast}
               initialSrt={sharedSrt}
               initialSegments={sharedSegments}
+              tokens={tokens}
+              onCheckAndDeductTokens={handleCheckAndDeduct}
             />
           )}
 
@@ -358,6 +446,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               lang={lang}
               onLogActivity={(tool, title, sum, preview) => logActivity(tool, title, sum, preview)}
               showToast={showToast}
+              tokens={tokens}
+              onCheckAndDeductTokens={handleCheckAndDeduct}
             />
           )}
 
@@ -365,6 +455,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             <QrPage
               lang={lang}
               onLogActivity={(tool, title, sum) => logActivity(tool, title, sum)}
+              showToast={showToast}
+              tokens={tokens}
+              onCheckAndDeductTokens={handleCheckAndDeduct}
             />
           )}
 
@@ -373,6 +466,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               lang={lang}
               onLogActivity={(tool, title, sum) => logActivity(tool, title, sum)}
               showToast={showToast}
+              tokens={tokens}
+              onCheckAndDeductTokens={handleCheckAndDeduct}
             />
           )}
 

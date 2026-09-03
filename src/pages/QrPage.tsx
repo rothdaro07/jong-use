@@ -9,9 +9,16 @@ import { QrCode } from 'lucide-react';
 interface QrPageProps {
   lang: Language;
   onLogActivity: (tool: 'qr', title: string, summary?: string) => void;
+  showToast?: (msg: string) => void;
+  tokens?: number;
+  onCheckAndDeductTokens?: (cost: number, tool: string, title: string, summary?: string) => Promise<boolean>;
 }
 
-export const QrPage: React.FC<QrPageProps> = ({ lang, onLogActivity }) => {
+export const QrPage: React.FC<QrPageProps> = ({
+  lang,
+  onLogActivity,
+  onCheckAndDeductTokens,
+}) => {
   const t = translations[lang];
 
   const [config, setConfig] = useState<QrCodeConfig>({
@@ -41,7 +48,12 @@ export const QrPage: React.FC<QrPageProps> = ({ lang, onLogActivity }) => {
 
         {/* Right column: Sticky Live Preview */}
         <div className="lg:col-span-5 sticky top-24">
-          <QrPreview config={config} lang={lang} />
+          <QrPreview
+            config={config}
+            lang={lang}
+            onCheckAndDeductTokens={onCheckAndDeductTokens}
+            onLogActivity={onLogActivity}
+          />
         </div>
       </div>
     </PageContainer>

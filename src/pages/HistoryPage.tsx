@@ -28,11 +28,11 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
       case 'videostyle':
         return <Video className="w-4 h-4 text-rose-600" />;
       case 'ocr':
-        return <FileText className="w-4 h-4 text-indigo-600" />;
+        return <FileText className="w-4 h-4 text-emerald-600" />;
       case 'qr':
         return <QrCode className="w-4 h-4 text-emerald-600" />;
       case 'tts':
-        return <Volume2 className="w-4 h-4 text-blue-600" />;
+        return <Volume2 className="w-4 h-4 text-emerald-600" />;
       default:
         return <Clock className="w-4 h-4 text-stone-600" />;
     }
@@ -118,7 +118,7 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
                   <button
                     type="button"
                     onClick={() => onNavigate(item.tool)}
-                    className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
+                    className="text-[11px] font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
                   >
                     Open {item.tool.toUpperCase()} →
                   </button>

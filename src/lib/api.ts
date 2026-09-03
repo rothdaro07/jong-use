@@ -1,4 +1,4 @@
-import { OcrResult, SubtitleSegment } from '../types';
+import { OcrResult, SubtitleSegment, ClonedVoiceProfile } from '../types';
 
 async function parseJsonResponse<T>(res: Response, defaultError: string): Promise<T> {
   const contentType = res.headers.get('content-type') || '';
@@ -112,14 +112,21 @@ export async function generateIdPhoto(req: IdPhotoRequest): Promise<{ success: b
   return parseJsonResponse<{ success: boolean; imageUrl: string }>(res, 'Failed to generate ID photo');
 }
 
-export async function generateTts(text: string, lang = 'km', voice = 'Kore'): Promise<{ audioBase64: string; audioUrl: string }> {
+export async function generateTts(
+  text: string,
+  lang = 'km',
+  voice = 'Kore',
+  cloneProfile?: ClonedVoiceProfile,
+  speed?: number,
+  pitch?: number
+): Promise<{ audioBase64: string; audioUrl: string }> {
   const res = await fetch('/api/tts', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     },
-    body: JSON.stringify({ text, lang, voice }),
+    body: JSON.stringify({ text, lang, voice, cloneProfile, speed, pitch }),
   });
 
   const data = await parseJsonResponse<{ audioBase64: string; mimeType?: string }>(res, 'Failed to synthesize speech');
@@ -127,6 +134,23 @@ export async function generateTts(text: string, lang = 'km', voice = 'Kore'): Pr
     audioBase64: data.audioBase64,
     audioUrl: data.audioBase64,
   };
+}
+
+export async function cloneVoice(
+  audioBase64: string,
+  mimeType = 'audio/webm',
+  customName?: string
+): Promise<ClonedVoiceProfile> {
+  const res = await fetch('/api/clone-voice', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify({ audioBase64, mimeType, customName }),
+  });
+
+  return parseJsonResponse<ClonedVoiceProfile>(res, 'Failed to clone voice');
 }
 
 export async function processUpscale(req: UpscaleRequest): Promise<{ success: boolean; imageUrl: string }> {

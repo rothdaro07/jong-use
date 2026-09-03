@@ -4,12 +4,17 @@ import { Footer } from './components/layout/Footer';
 import { Home } from './pages/Home';
 import { DashboardPage } from './pages/DashboardPage';
 import { useUsageLog } from './hooks/useUsageLog';
+import { useUserAccount } from './hooks/useUserAccount';
 import { useToast } from './hooks/useToast';
 import { Language } from './types';
-import { subscribeToAuth, ensureAnonymousAuth } from './firebase';
+import { subscribeToAuth, ensureAnonymousAuth, logoutUser } from './firebase';
 import { User } from 'firebase/auth';
 import { AnimatePresence, motion } from 'motion/react';
 import { CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { SubscriptionModal } from './components/subscription/SubscriptionModal';
+import { TokenUsageModal } from './components/subscription/TokenUsageModal';
+import { TokenDepletedModal } from './components/subscription/TokenDepletedModal';
+import { GoogleAuthModal } from './components/auth/GoogleAuthModal';
 
 export default function App() {
   const [lang, setLang] = useState<Language>('km');
@@ -17,8 +22,34 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const initialRedirectDone = useRef<boolean>(false);
 
+  // Modals state
+  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState<boolean>(false);
+  const [usageModalOpen, setUsageModalOpen] = useState<boolean>(false);
+  const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
+  const [tokenDepletedModal, setTokenDepletedModal] = useState<{
+    isOpen: boolean;
+    requiredTokens: number;
+    toolName?: string;
+  }>({
+    isOpen: false,
+    requiredTokens: 10,
+    toolName: '',
+  });
+
   const { logs, logActivity, clearHistory } = useUsageLog();
   const { toasts, showToast, removeToast } = useToast();
+
+  // Integrated User Account & Token System
+  const {
+    account,
+    tokens,
+    plan,
+    deductTokens,
+    subscribeToPlan,
+    refillTokens,
+    tokenLogs,
+    hasEnoughTokens,
+  } = useUserAccount(user);
 
   useEffect(() => {
     // Listen to Firebase auth state
@@ -42,6 +73,24 @@ export default function App() {
   useEffect(() => {
     document.documentElement.lang = lang;
   }, [lang]);
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      showToast(lang === 'km' ? 'បានចាកចេញពីគណនីជោគជ័យ' : 'Signed out successfully', 'success');
+      setActiveTab('home');
+    } catch (err: any) {
+      console.error('Logout error:', err);
+    }
+  };
+
+  const handleOpenTokenDepleted = (requiredTokens: number, toolName: string) => {
+    setTokenDepletedModal({
+      isOpen: true,
+      requiredTokens,
+      toolName,
+    });
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-stone-50 text-stone-900 selection:bg-emerald-500 selection:text-white">
@@ -80,12 +129,19 @@ export default function App() {
         </AnimatePresence>
       </div>
 
-      {/* Main Clean Header (Logo on left, Single Language Flag on right) */}
+      {/* Main Header with Token Balance Pill, Subscribe Button, Account Avatar */}
       <Navbar
         currentLang={lang}
         onLanguageChange={setLang}
         activeTab={activeTab}
         onSelectTab={(tab) => setActiveTab(tab)}
+        tokens={tokens}
+        plan={plan}
+        user={user}
+        onOpenSubscription={() => setSubscriptionModalOpen(true)}
+        onOpenUsageModal={() => setUsageModalOpen(true)}
+        onOpenLogin={() => setAuthModalOpen(true)}
+        onLogout={handleLogout}
       />
 
       {/* Content Rendering: Home Page OR Dashboard Tools */}
@@ -97,6 +153,8 @@ export default function App() {
             onNavigate={(tab) => setActiveTab(tab)}
             showToast={showToast}
             recentCount={logs.length}
+            onOpenSubscription={() => setSubscriptionModalOpen(true)}
+            onOpenUsageModal={() => setUsageModalOpen(true)}
           />
         ) : (
           <DashboardPage
@@ -108,12 +166,79 @@ export default function App() {
             logActivity={logActivity}
             clearHistory={clearHistory}
             showToast={showToast}
+            tokens={tokens}
+            plan={plan}
+            account={account}
+            onOpenSubscription={() => setSubscriptionModalOpen(true)}
+            onOpenUsageModal={() => setUsageModalOpen(true)}
+            deductTokens={deductTokens}
+            hasEnoughTokens={hasEnoughTokens}
+            onOpenTokenDepleted={handleOpenTokenDepleted}
           />
         )}
       </main>
 
       {/* Footer */}
       <Footer currentLang={lang} />
+
+      {/* Subscription & Pricing Modal */}
+      <SubscriptionModal
+        isOpen={subscriptionModalOpen}
+        onClose={() => setSubscriptionModalOpen(false)}
+        lang={lang}
+        user={user}
+        currentPlan={plan}
+        currentTokens={tokens}
+        onSubscribe={subscribeToPlan}
+        onTopup={refillTokens}
+        onRequireAuth={() => {
+          setSubscriptionModalOpen(false);
+          setAuthModalOpen(true);
+        }}
+        showToast={showToast}
+      />
+
+      {/* Token & Usage Logs Modal */}
+      <TokenUsageModal
+        isOpen={usageModalOpen}
+        onClose={() => setUsageModalOpen(false)}
+        lang={lang}
+        user={user}
+        account={account}
+        tokenLogs={tokenLogs}
+        onOpenSubscription={() => {
+          setUsageModalOpen(false);
+          setSubscriptionModalOpen(true);
+        }}
+        onOpenLogin={() => {
+          setUsageModalOpen(false);
+          setAuthModalOpen(true);
+        }}
+      />
+
+      {/* Insufficient Token Alert Modal */}
+      <TokenDepletedModal
+        isOpen={tokenDepletedModal.isOpen}
+        onClose={() => setTokenDepletedModal((prev) => ({ ...prev, isOpen: false }))}
+        lang={lang}
+        requiredTokens={tokenDepletedModal.requiredTokens}
+        currentTokens={tokens}
+        toolName={tokenDepletedModal.toolName}
+        onOpenSubscription={() => {
+          setTokenDepletedModal((prev) => ({ ...prev, isOpen: false }));
+          setSubscriptionModalOpen(true);
+        }}
+      />
+
+      {/* Google Sign In Modal */}
+      <GoogleAuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={() => {
+          showToast(lang === 'km' ? 'បានចូលគណនីជោគជ័យ!' : 'Signed in successfully!', 'success');
+        }}
+        lang={lang}
+      />
     </div>
   );
 }

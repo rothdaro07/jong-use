@@ -55,7 +55,7 @@ export const OcrResultView: React.FC<OcrResultViewProps> = ({ result, lang, onRe
       <div className="space-y-4">
         {/* Metadata stats */}
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-800 border border-indigo-100 font-medium">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-100 font-medium">
             <Globe2 className="w-3.5 h-3.5" />
             <span>{t.ocrDetectedLang}: <strong>{result.detectedLanguage}</strong></span>
           </div>
@@ -78,7 +78,7 @@ export const OcrResultView: React.FC<OcrResultViewProps> = ({ result, lang, onRe
         <div className="rounded-xl border border-stone-200 bg-stone-50/70 p-4">
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-xs font-bold text-stone-700 uppercase tracking-wider flex items-center gap-1.5">
-              <FileText className="w-3.5 h-3.5 text-indigo-600" />
+              <FileText className="w-3.5 h-3.5 text-emerald-600" />
               {t.ocrExtractedLabel}
             </h4>
             <Button

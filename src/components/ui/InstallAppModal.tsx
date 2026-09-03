@@ -110,7 +110,7 @@ export const InstallAppModal: React.FC<InstallAppModalProps> = ({
                 </span>
                 <span className="flex items-center gap-1">
                   {lang === 'km' ? 'ចុចប៊ូតុងចែករំលែក' : 'Tap the Share icon'}
-                  <Share className="w-3.5 h-3.5 text-blue-400 inline" />
+                  <Share className="w-3.5 h-3.5 text-emerald-400 inline" />
                   {lang === 'km' ? 'នៅខាងក្រោម Safari' : 'in Safari toolbar'}
                 </span>
               </div>

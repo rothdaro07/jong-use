@@ -14,9 +14,17 @@ interface OcrPageProps {
   lang: Language;
   onLogActivity: (tool: 'ocr', title: string, summary?: string, previewUrl?: string) => void;
   showToast: (msg: string, type?: 'success' | 'error') => void;
+  tokens?: number;
+  onCheckAndDeductTokens?: (cost: number, tool: string, title: string, summary?: string) => Promise<boolean>;
 }
 
-export const OcrPage: React.FC<OcrPageProps> = ({ lang, onLogActivity, showToast }) => {
+export const OcrPage: React.FC<OcrPageProps> = ({
+  lang,
+  onLogActivity,
+  showToast,
+  tokens,
+  onCheckAndDeductTokens,
+}) => {
   const t = translations[lang];
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [translate, setTranslate] = useState(false);
@@ -26,6 +34,17 @@ export const OcrPage: React.FC<OcrPageProps> = ({ lang, onLogActivity, showToast
 
   const handleRunOcr = async () => {
     if (!selectedImage) return;
+
+    if (onCheckAndDeductTokens) {
+      const allowed = await onCheckAndDeductTokens(
+        5,
+        'ocr',
+        'OCR Text Extraction',
+        translate ? `Translate to ${targetLang}` : 'Document Text Scan'
+      );
+      if (!allowed) return;
+    }
+
     setLoading(true);
     try {
       const data = await processOcr({
@@ -73,14 +92,14 @@ export const OcrPage: React.FC<OcrPageProps> = ({ lang, onLogActivity, showToast
             <div className="pt-3 border-t border-stone-100 space-y-3">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-semibold text-stone-700 font-khmer cursor-pointer flex items-center gap-1.5">
-                  <Languages className="w-3.5 h-3.5 text-indigo-600" />
+                  <Languages className="w-3.5 h-3.5 text-emerald-600" />
                   <span>{t.ocrTranslateToggle}</span>
                 </label>
                 <input
                   type="checkbox"
                   checked={translate}
                   onChange={(e) => setTranslate(e.target.checked)}
-                  className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 cursor-pointer"
+                  className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 cursor-pointer"
                 />
               </div>
 
@@ -92,7 +111,7 @@ export const OcrPage: React.FC<OcrPageProps> = ({ lang, onLogActivity, showToast
                   <select
                     value={targetLang}
                     onChange={(e) => setTargetLang(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs bg-white focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs bg-white focus:ring-2 focus:ring-emerald-500"
                   >
                     <option value="English">English (អង់គ្លេស)</option>
                     <option value="Khmer">Khmer (ភាសាខ្មែរ)</option>
@@ -107,13 +126,16 @@ export const OcrPage: React.FC<OcrPageProps> = ({ lang, onLogActivity, showToast
             <Button
               variant="primary"
               size="lg"
-              className="w-full"
+              className="w-full flex items-center justify-center gap-2"
               onClick={handleRunOcr}
               loading={loading}
               disabled={!selectedImage}
               icon={<FileText className="w-4 h-4" />}
             >
-              {lang === 'km' ? 'ចាប់ផ្តើមអានអត្ថបទ (Start OCR)' : 'Extract Text'}
+              <span>{lang === 'km' ? 'ចាប់ផ្តើមអានអត្ថបទ (Start OCR)' : 'Extract Text'}</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-800/80 text-emerald-100 font-bold ml-1">
+                5 Tokens
+              </span>
             </Button>
           </Card>
         </div>
@@ -131,7 +153,7 @@ export const OcrPage: React.FC<OcrPageProps> = ({ lang, onLogActivity, showToast
             <OcrResultView result={result} lang={lang} onReset={handleReset} />
           ) : (
             <Card className="min-h-[420px] flex flex-col items-center justify-center text-center p-8 border-dashed bg-stone-50/50">
-              <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center mb-3">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
                 <FileText className="w-8 h-8" />
               </div>
               <h4 className="font-bayon text-base text-stone-800 mb-1">

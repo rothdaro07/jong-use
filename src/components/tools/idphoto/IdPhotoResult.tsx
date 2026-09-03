@@ -107,7 +107,7 @@ export const IdPhotoResult: React.FC<IdPhotoResultProps> = ({ imageUrl, lang, on
         {/* Print sheet action */}
         <div className="w-full max-w-sm rounded-xl border border-stone-200 bg-stone-50/80 p-4 text-center space-y-3">
           <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-stone-800">
-            <Grid className="w-4 h-4 text-indigo-600" />
+            <Grid className="w-4 h-4 text-emerald-600" />
             <span>4x6 Photo Sheet (6x Passport Copies)</span>
           </div>
           <p className="text-xs text-stone-500">

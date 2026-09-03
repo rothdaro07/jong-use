@@ -16,7 +16,7 @@ export const Spinner: React.FC<SpinnerProps> = ({ size = 'md', text, className =
   return (
     <div className={`flex flex-col items-center justify-center gap-3 py-6 ${className}`}>
       <div
-        className={`${sizeMap[size]} border-indigo-200 border-t-indigo-600 rounded-full animate-spin`}
+        className={`${sizeMap[size]} border-emerald-200 border-t-emerald-600 rounded-full animate-spin`}
       />
       {text && <p className="text-sm font-medium text-stone-600 animate-pulse">{text}</p>}
     </div>

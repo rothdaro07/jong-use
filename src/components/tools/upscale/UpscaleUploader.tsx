@@ -65,7 +65,7 @@ export const UpscaleUploader: React.FC<UpscaleUploaderProps> = ({
           onClick={() => onChangeMode('upscale')}
           className={`flex items-center justify-center gap-2 p-3 rounded-xl border text-xs font-bold transition-all ${
             mode === 'upscale'
-              ? 'border-indigo-600 bg-indigo-50/70 text-indigo-700 shadow-xs ring-2 ring-indigo-200'
+              ? 'border-emerald-600 bg-emerald-50/70 text-emerald-700 shadow-xs ring-2 ring-emerald-200'
               : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300'
           }`}
         >
@@ -78,7 +78,7 @@ export const UpscaleUploader: React.FC<UpscaleUploaderProps> = ({
           onClick={() => onChangeMode('bgremove')}
           className={`flex items-center justify-center gap-2 p-3 rounded-xl border text-xs font-bold transition-all ${
             mode === 'bgremove'
-              ? 'border-indigo-600 bg-indigo-50/70 text-indigo-700 shadow-xs ring-2 ring-indigo-200'
+              ? 'border-emerald-600 bg-emerald-50/70 text-emerald-700 shadow-xs ring-2 ring-emerald-200'
               : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300'
           }`}
         >
@@ -102,7 +102,7 @@ export const UpscaleUploader: React.FC<UpscaleUploaderProps> = ({
                   onClick={() => onChangeScale(s)}
                   className={`py-2 rounded-xl border text-xs font-bold transition-all ${
                     scale === s
-                      ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                      ? 'border-emerald-600 bg-emerald-50 text-emerald-700'
                       : 'border-stone-200 bg-white text-stone-600'
                   }`}
                 >
@@ -120,7 +120,7 @@ export const UpscaleUploader: React.FC<UpscaleUploaderProps> = ({
               type="checkbox"
               checked={enhanceFaces}
               onChange={onToggleEnhanceFaces}
-              className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 cursor-pointer"
+              className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 cursor-pointer"
             />
           </div>
         </Card>
@@ -137,7 +137,7 @@ export const UpscaleUploader: React.FC<UpscaleUploaderProps> = ({
                 onClick={() => onChangeBgColor(bg.id)}
                 className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl border text-xs font-medium transition-all ${
                   bgColor === bg.id
-                    ? 'border-indigo-600 bg-indigo-50/70 ring-2 ring-indigo-200'
+                    ? 'border-emerald-600 bg-emerald-50/70 ring-2 ring-emerald-200'
                     : 'border-stone-200 bg-white hover:border-stone-300'
                 }`}
               >
@@ -208,7 +208,7 @@ export const UpscaleUploader: React.FC<UpscaleUploaderProps> = ({
                 </span>
               </div>
 
-              <span className="absolute top-3 right-3 px-2 py-1 rounded bg-indigo-600/90 text-white text-[10px] font-bold shadow-xs">
+              <span className="absolute top-3 right-3 px-2 py-1 rounded bg-emerald-600/90 text-white text-[10px] font-bold shadow-xs">
                 AI Enhanced
               </span>
             </div>
@@ -221,7 +221,7 @@ export const UpscaleUploader: React.FC<UpscaleUploaderProps> = ({
                 max="100"
                 value={sliderPos}
                 onChange={(e) => setSliderPos(Number(e.target.value))}
-                className="w-full accent-indigo-600 cursor-ew-resize h-1.5 bg-stone-200 rounded-lg appearance-none"
+                className="w-full accent-emerald-600 cursor-ew-resize h-1.5 bg-stone-200 rounded-lg appearance-none"
               />
               <div className="flex justify-between text-[11px] text-stone-500 font-medium">
                 <span>◀ Drag to compare Original</span>

@@ -9,9 +9,11 @@ import confetti from 'canvas-confetti';
 interface QrPreviewProps {
   config: QrCodeConfig;
   lang: Language;
+  onCheckAndDeductTokens?: (cost: number, tool: string, title: string, summary?: string) => Promise<boolean>;
+  onLogActivity?: (tool: 'qr', title: string, summary?: string) => void;
 }
 
-export const QrPreview: React.FC<QrPreviewProps> = ({ config, lang }) => {
+export const QrPreview: React.FC<QrPreviewProps> = ({ config, lang, onCheckAndDeductTokens, onLogActivity }) => {
   const t = translations[lang];
   const qrRef = useRef<HTMLDivElement>(null);
   const qrCodeInstance = useRef<QRCodeStyling | null>(null);
@@ -90,7 +92,17 @@ export const QrPreview: React.FC<QrPreviewProps> = ({ config, lang }) => {
     }
   }, [config]);
 
-  const handleDownload = (format: 'png' | 'svg' = 'png') => {
+  const handleDownload = async (format: 'png' | 'svg' = 'png') => {
+    if (onCheckAndDeductTokens) {
+      const allowed = await onCheckAndDeductTokens(
+        1,
+        'qr',
+        `Custom QR Code (${format.toUpperCase()})`,
+        config.content ? config.content.slice(0, 40) : 'QR code export'
+      );
+      if (!allowed) return;
+    }
+
     if (qrCodeInstance.current) {
       qrCodeInstance.current.download({
         name: `jong_use_qr_${Date.now()}`,
@@ -102,6 +114,8 @@ export const QrPreview: React.FC<QrPreviewProps> = ({ config, lang }) => {
         spread: 60,
         origin: { y: 0.7 },
       });
+
+      onLogActivity?.('qr', `QR Code Download (${format.toUpperCase()})`, config.content);
     }
   };
 
@@ -129,11 +143,14 @@ export const QrPreview: React.FC<QrPreviewProps> = ({ config, lang }) => {
         <Button
           variant="primary"
           size="md"
-          className="w-full sm:w-auto"
+          className="w-full sm:w-auto flex items-center justify-center gap-1.5"
           onClick={() => handleDownload('png')}
           icon={<Download className="w-4 h-4" />}
         >
-          {t.download} PNG
+          <span>{t.download} PNG</span>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-800/80 text-emerald-100 font-bold ml-1">
+            1 Token
+          </span>
         </Button>
         <Button
           variant="outline"

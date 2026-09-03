@@ -180,7 +180,7 @@ export const FileDropzone: React.FC<FileDropzoneProps> = ({
         </div>
         <div className="p-3 bg-white border-t border-stone-200 flex items-center justify-between">
           <span className="text-xs font-medium text-stone-500 flex items-center gap-1.5">
-            <ImageIcon className="w-3.5 h-3.5 text-indigo-600" />
+            <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
             {t.upload}
           </span>
           <Button
@@ -254,8 +254,8 @@ export const FileDropzone: React.FC<FileDropzoneProps> = ({
       onClick={() => fileInputRef.current?.click()}
       className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center ${
         isDragging
-          ? 'border-indigo-500 bg-indigo-50/70 scale-[1.01]'
-          : 'border-stone-300 hover:border-indigo-400 hover:bg-stone-50/80 bg-white/70'
+          ? 'border-emerald-500 bg-emerald-50/70 scale-[1.01]'
+          : 'border-stone-300 hover:border-emerald-400 hover:bg-stone-50/80 bg-white/70'
       }`}
     >
       <input
@@ -265,7 +265,7 @@ export const FileDropzone: React.FC<FileDropzoneProps> = ({
         className="hidden"
         onChange={handleFileChange}
       />
-      <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3 shadow-xs">
+      <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3 shadow-xs">
         <UploadCloud className="w-7 h-7" />
       </div>
       <h4 className="text-sm font-bold text-stone-800 mb-1">

@@ -44,7 +44,7 @@ export const AttireSelector: React.FC<AttireSelectorProps> = ({
       {/* 1. Background Color Selection */}
       <Card className="space-y-3">
         <div className="flex items-center gap-2 pb-2 border-b border-stone-100">
-          <Palette className="w-4 h-4 text-indigo-600" />
+          <Palette className="w-4 h-4 text-emerald-600" />
           <h4 className="text-xs font-bold text-stone-800 uppercase tracking-wider">
             {t.idPhotoBg}
           </h4>
@@ -60,7 +60,7 @@ export const AttireSelector: React.FC<AttireSelectorProps> = ({
                 onClick={() => onSelectBg(bg.id)}
                 className={`flex items-center justify-between p-2.5 rounded-xl border text-left transition-all ${
                   isSelected
-                    ? 'border-indigo-600 bg-indigo-50/70 ring-2 ring-indigo-200'
+                    ? 'border-emerald-600 bg-emerald-50/70 ring-2 ring-emerald-200'
                     : 'border-stone-200 bg-white hover:border-stone-300'
                 }`}
               >
@@ -73,7 +73,7 @@ export const AttireSelector: React.FC<AttireSelectorProps> = ({
                     {bg.label}
                   </div>
                 </div>
-                {isSelected && <Check className="w-4 h-4 text-indigo-600 shrink-0" />}
+                {isSelected && <Check className="w-4 h-4 text-emerald-600 shrink-0" />}
               </button>
             );
           })}
@@ -83,7 +83,7 @@ export const AttireSelector: React.FC<AttireSelectorProps> = ({
       {/* 2. Attire Selection */}
       <Card className="space-y-3">
         <div className="flex items-center gap-2 pb-2 border-b border-stone-100">
-          <Shirt className="w-4 h-4 text-indigo-600" />
+          <Shirt className="w-4 h-4 text-emerald-600" />
           <h4 className="text-xs font-bold text-stone-800 uppercase tracking-wider">
             {t.idPhotoAttire}
           </h4>
@@ -99,7 +99,7 @@ export const AttireSelector: React.FC<AttireSelectorProps> = ({
                 onClick={() => onSelectAttire(attire.id)}
                 className={`flex items-center justify-between p-3 rounded-xl border text-left transition-all ${
                   isSelected
-                    ? 'border-indigo-600 bg-indigo-50/70 text-indigo-950 font-bold ring-2 ring-indigo-200'
+                    ? 'border-emerald-600 bg-emerald-50/70 text-emerald-950 font-bold ring-2 ring-emerald-200'
                     : 'border-stone-200 bg-white text-stone-700 hover:border-stone-300'
                 }`}
               >
@@ -110,7 +110,7 @@ export const AttireSelector: React.FC<AttireSelectorProps> = ({
                   <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-stone-100 text-stone-500 border border-stone-200">
                     {attire.badge}
                   </span>
-                  {isSelected && <Check className="w-4 h-4 text-indigo-600" />}
+                  {isSelected && <Check className="w-4 h-4 text-emerald-600" />}
                 </div>
               </button>
             );
